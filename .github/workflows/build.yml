@@ -23,13 +23,13 @@ jobs:
         name: Lint & Type Check
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-            - uses: pnpm/action-setup@v4
+            - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
               with:
                   version: 10
 
-            - uses: actions/setup-node@v4
+            - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
               with:
                   node-version: 22
                   cache: pnpm
@@ -47,13 +47,13 @@ jobs:
             matrix:
                 node-version: [20, 22]
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-            - uses: pnpm/action-setup@v4
+            - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
               with:
                   version: 10
 
-            - uses: actions/setup-node@v4
+            - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
               with:
                   node-version: ${{ matrix.node-version }}
                   cache: pnpm
@@ -67,20 +67,18 @@ jobs:
               run: pnpm run test
 
     # ─── Integration Tests (Hiero Solo) ────────────────────────────
-    # Uncomment once integration tests are written.
-    # Uses hiero-ledger/hiero-solo-action to spin up a local network.
 
     integration:
         name: Integration Tests
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-            - uses: pnpm/action-setup@v4
+            - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
               with:
                   version: 10
 
-            - uses: actions/setup-node@v4
+            - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
               with:
                   node-version: 22
                   cache: pnpm
@@ -91,11 +89,16 @@ jobs:
               run: pnpm run build
 
             - name: Setup Hiero Solo Network
-              uses: hiero-ledger/hiero-solo-action@v0.8
+              uses: hiero-ledger/hiero-solo-action@692b186bd2e4c8d46b9deb1c067dc6ddcf0abcd7 # v0.18.0
               id: solo
               with:
                   installMirrorNode: true
+                  hieroVersion: v0.66.0
+                  mirrorNodeVersion: v0.138.0
                   mirrorNodePortRest: 5551
+                  mirrorNodePortGrpc: 5600
+                  mirrorNodePortWeb3Rest: 8545
+                  soloVersion: 0.46.1
 
             - name: Wait for Mirror Node
               run: |
