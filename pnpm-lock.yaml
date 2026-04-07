@@ -32,9 +32,6 @@ importers:
       typescript-eslint:
         specifier: ^8.56.0
         version: 8.56.0(eslint@10.0.0)(typescript@5.9.3)
-      vitest:
-        specifier: ^3.0.0
-        version: 3.2.4(@types/node@22.19.11)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
 
   packages/core:
     dependencies:
@@ -44,6 +41,10 @@ importers:
       dotenv:
         specifier: ^16.4.7
         version: 16.6.1
+    devDependencies:
+      vitest:
+        specifier: ^3.0.0
+        version: 3.2.4(@types/node@22.19.11)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
 
   packages/express:
     dependencies:
