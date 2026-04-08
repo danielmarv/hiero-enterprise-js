@@ -18,9 +18,8 @@ concurrency:
     cancel-in-progress: true
 
 jobs:
-    # ─── Lint & Type Check ──────────────────────────────────────────
-    lint:
-        name: Lint & Type Check
+    build:
+        name: Build and Test
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -35,31 +34,6 @@ jobs:
                   cache: pnpm
 
             - run: pnpm install --frozen-lockfile
-
-            - name: ESLint
-              run: pnpm run lint
-
-    # ─── Unit and Integration Tests (Hiero Solo) ────────────────────────────
-
-    integration:
-        name: Integration Tests
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-            - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
-              with:
-                  version: 10
-
-            - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
-              with:
-                  node-version: 22
-                  cache: pnpm
-
-            - run: pnpm install --frozen-lockfile
-
-            - name: Build packages
-              run: pnpm run build
 
             - name: Setup Hiero Solo Network
               uses: hiero-ledger/hiero-solo-action@692b186bd2e4c8d46b9deb1c067dc6ddcf0abcd7 # v0.18.0
@@ -84,6 +58,11 @@ jobs:
                     echo "Attempt $i/60 — waiting 5s..."
                     sleep 5
                   done
+            - name: ESLint
+              run: pnpm run lint
+
+            - name: Build packages
+              run: pnpm run build
 
             - name: Run unit and integration tests
               env:
