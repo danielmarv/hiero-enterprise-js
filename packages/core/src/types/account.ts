@@ -1,4 +1,4 @@
-import type { PrivateKey } from "@hashgraph/sdk";
+import type { PrivateKey } from "@hiero-ledger/sdk";
 
 /**
  * The type of account (and underlying key) to generate.

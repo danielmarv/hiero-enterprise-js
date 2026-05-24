@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { HieroContext } from "../../src/context/hiero-context.js";
-import { Client } from "@hashgraph/sdk";
+import { Client } from "@hiero-ledger/sdk";
 import * as configModule from "../../src/config/index.js";
 
 // Mock the SDK
-vi.mock("@hashgraph/sdk", async (importOriginal) => {
-    const actual = await importOriginal<typeof import("@hashgraph/sdk")>();
+vi.mock("@hiero-ledger/sdk", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("@hiero-ledger/sdk")>();
 
     const mockClient = {
         setOperator: vi.fn().mockReturnThis(),

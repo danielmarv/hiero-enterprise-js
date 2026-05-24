@@ -7,12 +7,12 @@ import {
     AccountBalanceQuery,
     TransferTransaction,
     PrivateKey,
-} from "@hashgraph/sdk";
+} from "@hiero-ledger/sdk";
 import { AccountType } from "../../src/types/index.js";
 
 // Mock the SDK
-vi.mock("@hashgraph/sdk", async (importOriginal) => {
-    const actual = await importOriginal<typeof import("@hashgraph/sdk")>();
+vi.mock("@hiero-ledger/sdk", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("@hiero-ledger/sdk")>();
 
     // Returns "this" to allow method chaining
     const mockTx = {

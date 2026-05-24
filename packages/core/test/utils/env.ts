@@ -1,4 +1,4 @@
-import { Client } from "@hashgraph/sdk";
+import { Client } from "@hiero-ledger/sdk";
 import { HieroContext } from "../../src/context/hiero-context.js";
 
 // Operator ID and Private Key from a standard Hiero Solo Network setup

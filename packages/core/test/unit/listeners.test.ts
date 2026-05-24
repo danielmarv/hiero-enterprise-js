@@ -7,8 +7,8 @@ import type {
 import { AccountClient } from "../../src/services/account-client.js";
 
 // Mock the hashgraph SDK so we don't hit the real network
-vi.mock("@hashgraph/sdk", async (importOriginal) => {
-    const actual = await importOriginal<typeof import("@hashgraph/sdk")>();
+vi.mock("@hiero-ledger/sdk", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("@hiero-ledger/sdk")>();
 
     // Create chainable mock transactions
     const mockTx = {
@@ -107,7 +107,7 @@ describe("Transaction Interceptors", () => {
         };
 
         // We override the import for just this test
-        const { AccountCreateTransaction } = await import("@hashgraph/sdk");
+        const { AccountCreateTransaction } = await import("@hiero-ledger/sdk");
         vi.mocked(AccountCreateTransaction).mockImplementationOnce(
             () => failingTx as any,
         );

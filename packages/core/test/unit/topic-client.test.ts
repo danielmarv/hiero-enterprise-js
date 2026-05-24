@@ -6,10 +6,10 @@ import {
     TopicUpdateTransaction,
     TopicDeleteTransaction,
     TopicMessageSubmitTransaction,
-} from "@hashgraph/sdk";
+} from "@hiero-ledger/sdk";
 
-vi.mock("@hashgraph/sdk", async (importOriginal) => {
-    const actual = await importOriginal<typeof import("@hashgraph/sdk")>();
+vi.mock("@hiero-ledger/sdk", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("@hiero-ledger/sdk")>();
 
     const createTxMock = () => {
         const mock: any = {

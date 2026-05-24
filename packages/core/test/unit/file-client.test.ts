@@ -8,10 +8,10 @@ import {
     FileDeleteTransaction,
     FileAppendTransaction,
     FileInfoQuery,
-} from "@hashgraph/sdk";
+} from "@hiero-ledger/sdk";
 
-vi.mock("@hashgraph/sdk", async (importOriginal) => {
-    const actual = await importOriginal<typeof import("@hashgraph/sdk")>();
+vi.mock("@hiero-ledger/sdk", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("@hiero-ledger/sdk")>();
 
     const mockTx = {
         setKeys: vi.fn().mockReturnThis(),

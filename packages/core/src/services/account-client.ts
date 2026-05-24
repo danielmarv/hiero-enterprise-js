@@ -7,7 +7,7 @@ import {
     PublicKey,
     Hbar,
     PrivateKey,
-} from "@hashgraph/sdk";
+} from "@hiero-ledger/sdk";
 import { AccountType } from "../types/index.js";
 import type { Account, CreatedAccount, Balance } from "../types/index.js";
 import type { HieroContext } from "../context/index.js";

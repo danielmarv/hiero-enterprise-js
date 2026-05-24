@@ -9,7 +9,7 @@ import {
     type PrivateKey,
     type TokenId,
     type AccountId,
-} from "@hashgraph/sdk";
+} from "@hiero-ledger/sdk";
 import type { HieroContext } from "../context/index.js";
 import type { TransactionEvent } from "../listeners/index.js";
 import { normalizeError } from "../errors/index.js";
