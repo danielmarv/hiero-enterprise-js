@@ -1,4 +1,5 @@
-import { Client, AccountId, PrivateKey, Transaction } from "@hiero-ledger/sdk";
+import type { Transaction } from "@hiero-ledger/sdk";
+import { Client, AccountId, PrivateKey } from "@hiero-ledger/sdk";
 import type { HieroConfig } from "../config/index.js";
 import { resolveConfigFromEnv, assertEnvConfigValid } from "../config/index.js";
 import { HieroError } from "../errors/index.js";
