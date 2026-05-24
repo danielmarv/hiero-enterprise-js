@@ -32,7 +32,8 @@
         "@hiero-ledger/sdk": "^2.84.0"
     },
     "devDependencies": {
-        "vitest": "^3.0.0"
+        "vitest": "^3.0.0",
+        "@types/node": "^24.0.0"
     },
     "engines": {
         "node": ">=20.12.0"

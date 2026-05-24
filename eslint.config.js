@@ -7,16 +7,11 @@ import { defineConfig, globalIgnores } from "eslint/config";
 export default defineConfig(
     globalIgnores(["**/dist/**", "**/node_modules/**", "**/*.test.ts"]),
 
-    // ─── Base JS rules ──────────────────────────────────────────
-    eslint.configs.recommended,
-
-    // ─── TypeScript rules ───────────────────────────────────────
     ...tseslint.configs.recommended,
-
-    // ─── Prettier (disables conflicting rules) ──────────────────
+    eslint.configs.recommended,
     prettierConfig,
 
-    // ─── Prettier plugin (reports formatting as errors) ─────────
+    //  Prettier plugin (reports formatting as errors)
     {
         plugins: { prettier: prettierPlugin },
         rules: {
@@ -24,7 +19,7 @@ export default defineConfig(
         },
     },
 
-    // ─── Project-specific rules ─────────────────────────────────
+    // Project-specific rules (TypeScript-specific rules that require type information)
     {
         files: ["**/*.{js,ts}"],
         languageOptions: {
