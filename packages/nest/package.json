@@ -12,6 +12,7 @@
             "import": "./dist/index.js"
         }
     },
+    "files": ["dist"],
     "scripts": {
         "build": "tsc",
         "clean": "rm -rf dist"
@@ -22,5 +23,12 @@
     "peerDependencies": {
         "@nestjs/common": ">=10",
         "@nestjs/core": ">=10"
+    },
+    "devDependencies": {
+        "@nestjs/common": "^10.0.0",
+        "reflect-metadata": "^0.2.0"
+    },
+    "engines": {
+        "node": ">=20.12.0"
     }
 }
