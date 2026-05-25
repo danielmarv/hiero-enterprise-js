@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { TopicClient } from "../../../src/services/topic-client.js";
 import { createMockContext } from "../../utils/mock-context.js";
-import type { HieroContext } from "../../../src/context/hiero-context.js";
+import type { HieroContext } from "../../../src/config/context/hiero-context.js";
 import {
     TopicCreateTransaction,
     TopicUpdateTransaction,
