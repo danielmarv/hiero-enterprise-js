@@ -37,8 +37,6 @@ HIERO_OPERATOR_KEY=302e020100300506032b6570...
 
 Or pass config directly when registering the integration.
 
-### Usage
-
 **Express**
 
 ```ts
