@@ -6,6 +6,7 @@ import {
     TokenMintTransaction,
     TokenBurnTransaction,
     TransferTransaction,
+    type Long,
     type PrivateKey,
     type TokenId,
     type AccountId,
