@@ -14,7 +14,6 @@ It gives each major Node.js framework a native integration that matches how deve
 
 | Package | Description |
 |---------|-------------|
-| `@hiero-enterprise/core` | Services, repositories, models, config, error types |
 | `@hiero-enterprise/express` | Express middleware — `req.hiero.*` |
 | `@hiero-enterprise/fastify` | Fastify plugin — `fastify.hiero.*` |
 | `@hiero-enterprise/nest` | NestJS module — `HieroModule.forRoot()` with full DI |
@@ -38,7 +37,9 @@ HIERO_OPERATOR_KEY=302e020100300506032b6570...
 
 Or pass config directly when registering the integration.
 
-### Express
+### Usage
+
+**Express**
 
 ```ts
 import express from 'express';
@@ -53,7 +54,7 @@ app.get('/balance', async (req, res) => {
 });
 ```
 
-### Fastify
+**Fastify**
 
 ```ts
 import Fastify from 'fastify';
@@ -67,7 +68,7 @@ app.get('/balance', async () => {
 });
 ```
 
-### NestJS
+**NestJS**
 
 ```ts
 import { Module } from '@nestjs/common';
