@@ -20,7 +20,11 @@
     ],
     "scripts": {
         "build": "tsup",
-        "clean": "rm -rf dist"
+        "clean": "rm -rf dist",
+        "test": "pnpm run test:integration",
+        "test:unit": "vitest run test/integration",
+        "test:integration": "vitest run test/integration",
+        "test:watch": "vitest test/integration"
     },
     "peerDependencies": {
         "@hiero-ledger/sdk": "^2.84.0",
@@ -30,8 +34,11 @@
     "devDependencies": {
         "@hiero-enterprise/core": "workspace:*",
         "@nestjs/common": "^11.1.24",
+        "@nestjs/core": "^11.1.24",
+        "@nestjs/testing": "^11.1.24",
         "reflect-metadata": "^0.2.0",
-        "tsup": "^8.3.5"
+        "tsup": "^8.3.5",
+        "vitest": "^4.1.7"
     },
     "publishConfig": {
         "access": "public",
