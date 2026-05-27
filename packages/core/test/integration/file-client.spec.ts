@@ -39,7 +39,7 @@ describe("FileClient [Integration]", () => {
 
         await waitForMirrorNodeRecord();
 
-        // Asserting deletion by expecting empty contents (Hedera clears deleted file contents)
+        // Asserting deletion by expecting empty contents (Hiero clears deleted file contents)
         const bytes = await client.readFile(testFileId);
         expect(bytes.length).toBe(0);
 
