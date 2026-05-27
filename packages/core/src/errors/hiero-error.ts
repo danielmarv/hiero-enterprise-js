@@ -6,6 +6,7 @@ export const HieroErrorCode = {
     ConfigInvalid: "CONFIG_INVALID",
     MirrorNodeError: "MIRROR_NODE_ERROR",
     MirrorNodeHttpError: "MIRROR_NODE_HTTP_ERROR",
+    MirrorNodeSchemaMismatch: "MIRROR_NODE_SCHEMA_MISMATCH",
     NotFound: "NOT_FOUND",
     TimedOut: "TIMED_OUT",
     SdkError: "SDK_ERROR",

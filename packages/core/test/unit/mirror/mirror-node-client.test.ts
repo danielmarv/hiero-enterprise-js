@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach, beforeEach, vi } from "vitest";
 import { MirrorNodeClient } from "../../../src/mirror/mirror-node-client.js";
-import { HieroError } from "../../../src/errors/hiero-error.js";
+import { HieroError, HieroErrorCode } from "../../../src/errors/hiero-error.js";
 
 describe("MirrorNodeClient", () => {
     let client: MirrorNodeClient;
@@ -160,6 +160,77 @@ describe("MirrorNodeClient", () => {
             await expect(
                 client.queryTransaction("0.0.12345@1234567890.000"),
             ).rejects.toThrow(/Transaction not found/);
+        });
+    });
+
+    describe("schema validation", () => {
+        it("rejects account response missing 'account' field", async () => {
+            vi.spyOn(globalThis, "fetch").mockResolvedValue(
+                new Response(JSON.stringify({ balance: { balance: 1 } }), {
+                    status: 200,
+                    headers: { "Content-Type": "application/json" },
+                }),
+            );
+
+            const err = await client.queryAccount("0.0.1").catch((e) => e);
+            expect(err).toBeInstanceOf(HieroError);
+            expect(err.code).toBe(HieroErrorCode.MirrorNodeSchemaMismatch);
+        });
+
+        it("rejects paginated response without a data array", async () => {
+            vi.spyOn(globalThis, "fetch").mockResolvedValue(
+                new Response(JSON.stringify({ links: { next: null } }), {
+                    status: 200,
+                    headers: { "Content-Type": "application/json" },
+                }),
+            );
+
+            const err = await client
+                .queryNftsByAccount("0.0.1")
+                .catch((e) => e);
+            expect(err).toBeInstanceOf(HieroError);
+            expect(err.code).toBe(HieroErrorCode.MirrorNodeSchemaMismatch);
+        });
+
+        it("rejects token response missing 'token_id' field", async () => {
+            vi.spyOn(globalThis, "fetch").mockResolvedValue(
+                new Response(JSON.stringify({ name: "Foo" }), {
+                    status: 200,
+                    headers: { "Content-Type": "application/json" },
+                }),
+            );
+
+            const err = await client.queryTokenById("0.0.555").catch((e) => e);
+            expect(err).toBeInstanceOf(HieroError);
+            expect(err.code).toBe(HieroErrorCode.MirrorNodeSchemaMismatch);
+        });
+
+        it("rejects transaction list response without transactions array", async () => {
+            vi.spyOn(globalThis, "fetch").mockResolvedValue(
+                new Response(JSON.stringify({}), {
+                    status: 200,
+                    headers: { "Content-Type": "application/json" },
+                }),
+            );
+
+            const err = await client
+                .queryTransaction("0.0.1@123.000")
+                .catch((e) => e);
+            expect(err).toBeInstanceOf(HieroError);
+            expect(err.code).toBe(HieroErrorCode.MirrorNodeSchemaMismatch);
+        });
+
+        it("rejects a non-object (array) response", async () => {
+            vi.spyOn(globalThis, "fetch").mockResolvedValue(
+                new Response(JSON.stringify([1, 2, 3]), {
+                    status: 200,
+                    headers: { "Content-Type": "application/json" },
+                }),
+            );
+
+            const err = await client.queryAccount("0.0.1").catch((e) => e);
+            expect(err).toBeInstanceOf(HieroError);
+            expect(err.code).toBe(HieroErrorCode.MirrorNodeSchemaMismatch);
         });
     });
 });
