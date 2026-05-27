@@ -32,6 +32,9 @@ export * from "./repositories/index.js";
 // Services
 export * from "./services/index.js";
 
+// Factory helpers
+export * from "./factory/index.js";
+
 // Interceptors
 export * from "./listeners/index.js";
 

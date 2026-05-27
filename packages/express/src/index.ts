@@ -1,22 +1,8 @@
 import type { Request, Response, NextFunction } from "express";
 import type { HieroConfig, HieroServices } from "@hiero-enterprise/core";
 import {
-    HieroContext,
-    resolveMirrorNodeUrl,
+    createHieroServices,
     assertEnvConfigValid,
-    MirrorNodeClient,
-    AccountClient,
-    FileClient,
-    FungibleTokenClient,
-    NftClient,
-    SmartContractClient,
-    TopicClient,
-    AccountRepository,
-    NftRepository,
-    TokenRepository,
-    TopicRepository,
-    TransactionRepository,
-    NetworkRepository,
 } from "@hiero-enterprise/core";
 
 /**
@@ -53,36 +39,7 @@ export function hieroMiddleware(config?: HieroConfig) {
     if (!config) {
         assertEnvConfigValid();
     }
-    // Initialize once, share across all requests
-    const context = new HieroContext(config);
-    const mirrorNodeUrl = resolveMirrorNodeUrl(
-        context.config.network,
-        context.config.mirrorNodeUrl,
-    );
-    const mirrorNodeClient = new MirrorNodeClient(mirrorNodeUrl, {
-        timeoutMs: context.config.mirrorNodeTimeoutMs,
-        maxRetries: context.config.mirrorNodeMaxRetries,
-    });
-
-    const services: HieroServices = {
-        context,
-        accountClient: new AccountClient(context),
-        fileClient: new FileClient(context),
-        fungibleTokenClient: new FungibleTokenClient(context),
-        nftClient: new NftClient(context),
-        smartContractClient: new SmartContractClient(context),
-        topicClient: new TopicClient(context),
-        accountRepository: new AccountRepository(mirrorNodeClient),
-        nftRepository: new NftRepository(mirrorNodeClient),
-        tokenRepository: new TokenRepository(mirrorNodeClient),
-        topicRepository: new TopicRepository(mirrorNodeClient),
-        transactionRepository: new TransactionRepository(mirrorNodeClient),
-        networkRepository: new NetworkRepository(mirrorNodeClient),
-    };
-
-    // Cleanup on process exit
-    process.on("SIGTERM", () => context.close());
-    process.on("SIGINT", () => context.close());
+    const services: HieroServices = createHieroServices(config);
 
     return (req: Request, _res: Response, next: NextFunction) => {
         req.hiero = services;

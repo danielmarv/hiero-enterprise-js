@@ -8,9 +8,9 @@ import {
 } from "@nestjs/common";
 import type { HieroConfig } from "@hiero-enterprise/core";
 import {
-    HieroContext,
+    createHieroRuntime,
+    type HieroRuntime,
     resolveConfigFromEnv,
-    resolveMirrorNodeUrl,
     assertEnvConfigValid,
     MirrorNodeClient,
     AccountClient,
@@ -31,6 +31,7 @@ import {
 
 export const HIERO_CONFIG = "HIERO_CONFIG";
 export const HIERO_CONTEXT = "HIERO_CONTEXT";
+const HIERO_RUNTIME = "HIERO_RUNTIME";
 
 type NestImport =
     | Type<unknown>
@@ -48,6 +49,8 @@ export interface HieroModuleAsyncOptions {
     useFactory: (...args: unknown[]) => HieroConfig | Promise<HieroConfig>;
     /** Dependencies to inject into the factory */
     inject?: InjectionToken[];
+    /** Whether this module should be global in the Nest container */
+    global?: boolean;
 }
 
 // ─── HieroModule ───────────────────────────────────────────────
@@ -91,7 +94,10 @@ export class HieroModule {
      * @param config - Optional explicit config (falls back to env vars)
      * @returns Dynamic NestJS module definition
      */
-    static forRoot(config?: HieroConfig): DynamicModule {
+    static forRoot(
+        config?: HieroConfig,
+        opts?: { global?: boolean },
+    ): DynamicModule {
         if (!config) {
             // If no config provided, validate env vars and resolve config from env
             // This will throw an error if required env vars are missing or invalid
@@ -108,7 +114,7 @@ export class HieroModule {
             exports: providers.map((p) =>
                 typeof p === "object" && "provide" in p ? p.provide : p,
             ),
-            global: true,
+            global: opts?.global ?? false,
         };
     }
 
@@ -123,25 +129,10 @@ export class HieroModule {
             inject: options.inject ?? [],
         };
 
-        const contextProvider: Provider = {
-            provide: HIERO_CONTEXT,
-            useFactory: (config: HieroConfig) => new HieroContext(config),
+        const runtimeProvider: Provider = {
+            provide: HIERO_RUNTIME,
+            useFactory: (config: HieroConfig) => createHieroRuntime(config),
             inject: [HIERO_CONFIG],
-        };
-
-        const mirrorNodeProvider: Provider = {
-            provide: MirrorNodeClient,
-            useFactory: (context: HieroContext) => {
-                const mirrorNodeUrl = resolveMirrorNodeUrl(
-                    context.config.network,
-                    context.config.mirrorNodeUrl,
-                );
-                return new MirrorNodeClient(mirrorNodeUrl, {
-                    timeoutMs: context.config.mirrorNodeTimeoutMs,
-                    maxRetries: context.config.mirrorNodeMaxRetries,
-                });
-            },
-            inject: [HIERO_CONTEXT],
         };
 
         const serviceProviders = createServiceProviders();
@@ -149,12 +140,7 @@ export class HieroModule {
         return {
             module: HieroModule,
             imports: options.imports ?? [],
-            providers: [
-                configProvider,
-                contextProvider,
-                mirrorNodeProvider,
-                ...serviceProviders,
-            ],
+            providers: [configProvider, runtimeProvider, ...serviceProviders],
             exports: [
                 HIERO_CONFIG,
                 HIERO_CONTEXT,
@@ -172,126 +158,109 @@ export class HieroModule {
                 TransactionRepository,
                 NetworkRepository,
             ],
-            global: true,
+            global: options.global ?? false,
         };
     }
 }
 
 function createProviders(config: HieroConfig): Provider[] {
-    const context = new HieroContext(config);
-    const mirrorNodeUrl = resolveMirrorNodeUrl(
-        context.config.network,
-        context.config.mirrorNodeUrl,
-    );
-    const mirrorNodeClient = new MirrorNodeClient(mirrorNodeUrl, {
-        timeoutMs: config.mirrorNodeTimeoutMs,
-        maxRetries: config.mirrorNodeMaxRetries,
-    });
+    const runtime = createHieroRuntime(config);
 
     return [
         { provide: HIERO_CONFIG, useValue: config },
-        { provide: HIERO_CONTEXT, useValue: context },
-        { provide: MirrorNodeClient, useValue: mirrorNodeClient },
-        { provide: AccountClient, useValue: new AccountClient(context) },
-        { provide: FileClient, useValue: new FileClient(context) },
-        {
-            provide: FungibleTokenClient,
-            useValue: new FungibleTokenClient(context),
-        },
-        { provide: NftClient, useValue: new NftClient(context) },
-        {
-            provide: SmartContractClient,
-            useValue: new SmartContractClient(context),
-        },
-        { provide: TopicClient, useValue: new TopicClient(context) },
-        {
-            provide: AccountRepository,
-            useValue: new AccountRepository(mirrorNodeClient),
-        },
-        {
-            provide: NftRepository,
-            useValue: new NftRepository(mirrorNodeClient),
-        },
-        {
-            provide: TokenRepository,
-            useValue: new TokenRepository(mirrorNodeClient),
-        },
-        {
-            provide: TopicRepository,
-            useValue: new TopicRepository(mirrorNodeClient),
-        },
+        { provide: HIERO_RUNTIME, useValue: runtime },
+        { provide: HIERO_CONTEXT, useValue: runtime.context },
+        { provide: MirrorNodeClient, useValue: runtime.mirrorNodeClient },
+        { provide: AccountClient, useValue: runtime.accountClient },
+        { provide: FileClient, useValue: runtime.fileClient },
+        { provide: FungibleTokenClient, useValue: runtime.fungibleTokenClient },
+        { provide: NftClient, useValue: runtime.nftClient },
+        { provide: SmartContractClient, useValue: runtime.smartContractClient },
+        { provide: TopicClient, useValue: runtime.topicClient },
+        { provide: AccountRepository, useValue: runtime.accountRepository },
+        { provide: NftRepository, useValue: runtime.nftRepository },
+        { provide: TokenRepository, useValue: runtime.tokenRepository },
+        { provide: TopicRepository, useValue: runtime.topicRepository },
         {
             provide: TransactionRepository,
-            useValue: new TransactionRepository(mirrorNodeClient),
+            useValue: runtime.transactionRepository,
         },
-        {
-            provide: NetworkRepository,
-            useValue: new NetworkRepository(mirrorNodeClient),
-        },
+        { provide: NetworkRepository, useValue: runtime.networkRepository },
     ];
 }
 
 function createServiceProviders(): Provider[] {
     return [
         {
+            provide: HIERO_CONTEXT,
+            useFactory: (runtime: HieroRuntime) => runtime.context,
+            inject: [HIERO_RUNTIME],
+        },
+        {
+            provide: MirrorNodeClient,
+            useFactory: (runtime: HieroRuntime) => runtime.mirrorNodeClient,
+            inject: [HIERO_RUNTIME],
+        },
+        {
             provide: AccountClient,
-            useFactory: (ctx: HieroContext) => new AccountClient(ctx),
-            inject: [HIERO_CONTEXT],
+            useFactory: (runtime: HieroRuntime) => runtime.accountClient,
+            inject: [HIERO_RUNTIME],
         },
         {
             provide: FileClient,
-            useFactory: (ctx: HieroContext) => new FileClient(ctx),
-            inject: [HIERO_CONTEXT],
+            useFactory: (runtime: HieroRuntime) => runtime.fileClient,
+            inject: [HIERO_RUNTIME],
         },
         {
             provide: FungibleTokenClient,
-            useFactory: (ctx: HieroContext) => new FungibleTokenClient(ctx),
-            inject: [HIERO_CONTEXT],
+            useFactory: (runtime: HieroRuntime) => runtime.fungibleTokenClient,
+            inject: [HIERO_RUNTIME],
         },
         {
             provide: NftClient,
-            useFactory: (ctx: HieroContext) => new NftClient(ctx),
-            inject: [HIERO_CONTEXT],
+            useFactory: (runtime: HieroRuntime) => runtime.nftClient,
+            inject: [HIERO_RUNTIME],
         },
         {
             provide: SmartContractClient,
-            useFactory: (ctx: HieroContext) => new SmartContractClient(ctx),
-            inject: [HIERO_CONTEXT],
+            useFactory: (runtime: HieroRuntime) => runtime.smartContractClient,
+            inject: [HIERO_RUNTIME],
         },
         {
             provide: TopicClient,
-            useFactory: (ctx: HieroContext) => new TopicClient(ctx),
-            inject: [HIERO_CONTEXT],
+            useFactory: (runtime: HieroRuntime) => runtime.topicClient,
+            inject: [HIERO_RUNTIME],
         },
         {
             provide: AccountRepository,
-            useFactory: (mn: MirrorNodeClient) => new AccountRepository(mn),
-            inject: [MirrorNodeClient],
+            useFactory: (runtime: HieroRuntime) => runtime.accountRepository,
+            inject: [HIERO_RUNTIME],
         },
         {
             provide: NftRepository,
-            useFactory: (mn: MirrorNodeClient) => new NftRepository(mn),
-            inject: [MirrorNodeClient],
+            useFactory: (runtime: HieroRuntime) => runtime.nftRepository,
+            inject: [HIERO_RUNTIME],
         },
         {
             provide: TokenRepository,
-            useFactory: (mn: MirrorNodeClient) => new TokenRepository(mn),
-            inject: [MirrorNodeClient],
+            useFactory: (runtime: HieroRuntime) => runtime.tokenRepository,
+            inject: [HIERO_RUNTIME],
         },
         {
             provide: TopicRepository,
-            useFactory: (mn: MirrorNodeClient) => new TopicRepository(mn),
-            inject: [MirrorNodeClient],
+            useFactory: (runtime: HieroRuntime) => runtime.topicRepository,
+            inject: [HIERO_RUNTIME],
         },
         {
             provide: TransactionRepository,
-            useFactory: (mn: MirrorNodeClient) => new TransactionRepository(mn),
-            inject: [MirrorNodeClient],
+            useFactory: (runtime: HieroRuntime) =>
+                runtime.transactionRepository,
+            inject: [HIERO_RUNTIME],
         },
         {
             provide: NetworkRepository,
-            useFactory: (mn: MirrorNodeClient) => new NetworkRepository(mn),
-            inject: [MirrorNodeClient],
+            useFactory: (runtime: HieroRuntime) => runtime.networkRepository,
+            inject: [HIERO_RUNTIME],
         },
     ];
 }

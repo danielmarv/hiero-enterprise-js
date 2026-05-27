@@ -1,5 +1,3 @@
-import { existsSync } from "node:fs";
-import { resolve } from "node:path";
 import { HieroError } from "../errors/index.js";
 
 /**
@@ -67,28 +65,9 @@ export function resolveMirrorNodeUrl(
 }
 
 /**
- * Loads a .env file from the current working directory into process.env.
- * Uses Node.js built-in process.loadEnvFile() (Node 20.12+).
- * Silently skips if no .env file is found.
- */
-function loadDotenv(): void {
-    try {
-        const envPath = resolve(process.cwd(), ".env");
-        if (existsSync(envPath)) {
-            if (typeof process.loadEnvFile === "function") {
-                process.loadEnvFile(envPath);
-            }
-        }
-    } catch {
-        // .env loading is best-effort
-    }
-}
-
-/**
  * Resolve a HieroConfig from environment variables.
  *
- * Automatically attempts to load a `.env` file from the current working
- * directory before reading variables. Reads from:
+ * Reads from:
  *   HIERO_NETWORK
  *   HIERO_OPERATOR_ID
  *   HIERO_OPERATOR_KEY
@@ -97,8 +76,6 @@ function loadDotenv(): void {
  * @returns A HieroConfig or null if required env vars are missing
  */
 export function resolveConfigFromEnv(): HieroConfig | null {
-    loadDotenv();
-
     const network = process.env["HIERO_NETWORK"];
     const operatorId = process.env["HIERO_OPERATOR_ID"];
     const operatorKey = process.env["HIERO_OPERATOR_KEY"];
@@ -120,8 +97,6 @@ export function resolveConfigFromEnv(): HieroConfig | null {
  * Validates the environment and throws a HieroError explaining exactly what is missing.
  */
 export function assertEnvConfigValid(): void {
-    loadDotenv();
-
     const network = process.env["HIERO_NETWORK"];
     const operatorId = process.env["HIERO_OPERATOR_ID"];
     const operatorKey = process.env["HIERO_OPERATOR_KEY"];
@@ -137,7 +112,7 @@ export function assertEnvConfigValid(): void {
     if (missing.length > 0) {
         throw new HieroError(
             `Missing required Hiero environment variables:\n  - ${missing.join("\n  - ")}\n\n` +
-                `Set them in a .env file or export them in your shell.`,
+                `Set them in your process environment before application startup.`,
             { code: "CONFIG_INVALID" },
         );
     }

@@ -115,17 +115,6 @@ export class HieroContext {
     }
 
     /**
-     * Get the operator private key.
-     * Use with caution — prefer signTransaction() for most operations.
-     * Needed internally by service clients that build multi-sig transactions.
-     *
-     * @internal
-     */
-    public getOperatorKey(): PrivateKey {
-        return this._operatorKey;
-    }
-
-    /**
      * Close the SDK client and release resources.
      */
     public close(): void {

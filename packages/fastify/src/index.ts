@@ -2,22 +2,8 @@ import fp from "fastify-plugin";
 import type { FastifyInstance, FastifyPluginOptions } from "fastify";
 import type { HieroConfig, HieroServices } from "@hiero-enterprise/core";
 import {
-    HieroContext,
-    resolveMirrorNodeUrl,
+    createHieroRuntime,
     assertEnvConfigValid,
-    MirrorNodeClient,
-    AccountClient,
-    FileClient,
-    FungibleTokenClient,
-    NftClient,
-    SmartContractClient,
-    TopicClient,
-    AccountRepository,
-    NftRepository,
-    TokenRepository,
-    TopicRepository,
-    TransactionRepository,
-    NetworkRepository,
 } from "@hiero-enterprise/core";
 
 /**
@@ -61,37 +47,14 @@ const plugin = async function (
     if (!opts.config) {
         assertEnvConfigValid();
     }
-    const context = new HieroContext(opts.config);
-    const mirrorNodeUrl = resolveMirrorNodeUrl(
-        context.config.network,
-        context.config.mirrorNodeUrl,
-    );
-    const mirrorNodeClient = new MirrorNodeClient(mirrorNodeUrl, {
-        timeoutMs: context.config.mirrorNodeTimeoutMs,
-        maxRetries: context.config.mirrorNodeMaxRetries,
-    });
-
-    const services: HieroServices = {
-        context,
-        accountClient: new AccountClient(context),
-        fileClient: new FileClient(context),
-        fungibleTokenClient: new FungibleTokenClient(context),
-        nftClient: new NftClient(context),
-        smartContractClient: new SmartContractClient(context),
-        topicClient: new TopicClient(context),
-        accountRepository: new AccountRepository(mirrorNodeClient),
-        nftRepository: new NftRepository(mirrorNodeClient),
-        tokenRepository: new TokenRepository(mirrorNodeClient),
-        topicRepository: new TopicRepository(mirrorNodeClient),
-        transactionRepository: new TransactionRepository(mirrorNodeClient),
-        networkRepository: new NetworkRepository(mirrorNodeClient),
-    };
+    const runtime = createHieroRuntime(opts.config);
+    const services: HieroServices = runtime;
 
     fastify.decorate("hiero", services);
 
     // Clean up SDK client on close
     fastify.addHook("onClose", () => {
-        context.close();
+        runtime.close();
     });
 };
 
