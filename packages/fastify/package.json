@@ -1,7 +1,7 @@
 {
     "name": "@hiero-enterprise/fastify",
     "version": "0.1.0",
-    "description": "Fastify plugin for Hiero/Hedera networks",
+    "description": "Fastify plugin for the Hiero network",
     "license": "Apache-2.0",
     "type": "module",
     "main": "./dist/index.cjs",

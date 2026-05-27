@@ -1,6 +1,6 @@
 # Express Sample
 
-A REST API built with [Express](https://expressjs.com/) and `@hiero-enterprise/express` demonstrating how to query accounts, tokens, NFTs, topics, and network data from a Hiero/Hedera network.
+A REST API built with [Express](https://expressjs.com/) and `@hiero-enterprise/express` demonstrating how to query accounts, tokens, NFTs, topics, and network data from a Hiero network.
 
 ## Setup
 

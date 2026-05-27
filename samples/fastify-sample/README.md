@@ -1,6 +1,6 @@
 # Fastify Sample
 
-A REST API built with [Fastify](https://fastify.dev/) and `@hiero-enterprise/fastify` demonstrating how to query accounts, tokens, NFTs, topics, and network data from a Hiero/Hedera network.
+A REST API built with [Fastify](https://fastify.dev/) and `@hiero-enterprise/fastify` demonstrating how to query accounts, tokens, NFTs, topics, and network data from a Hiero network.
 
 ## Setup
 

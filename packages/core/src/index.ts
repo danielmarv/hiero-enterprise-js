@@ -1,5 +1,5 @@
 // @hiero-enterprise/core
-// Core services, repositories, and data models for Hiero/Hedera networks
+// Core services, repositories, and data models for the Hiero network
 
 // Data models
 export * from "./types/index.js";

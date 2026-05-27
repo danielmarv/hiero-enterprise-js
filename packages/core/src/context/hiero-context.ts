@@ -29,7 +29,7 @@ export class HieroContext {
     /** The operator private key — kept private to prevent accidental leakage */
     private readonly _operatorKey: PrivateKey;
 
-    /** The underlying Hedera SDK Client */
+    /** The underlying Hiero SDK Client */
     public readonly client: Client;
 
     /** The resolved configuration */

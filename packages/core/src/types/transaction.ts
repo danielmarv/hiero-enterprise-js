@@ -79,7 +79,7 @@ export interface StakingRewardTransfer {
 }
 
 /**
- * Transaction type enum matching Hedera's transaction types.
+ * Transaction type enum matching Hiero's transaction types.
  */
 export type TransactionType =
     | "CONSENSUSCREATETOPIC"

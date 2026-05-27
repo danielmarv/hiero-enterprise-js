@@ -1,7 +1,7 @@
 {
     "name": "@hiero-enterprise/nest",
     "version": "0.1.0",
-    "description": "NestJS module for Hiero/Hedera networks",
+    "description": "NestJS module for the Hiero network",
     "license": "Apache-2.0",
     "type": "module",
     "main": "./dist/index.cjs",

@@ -1,7 +1,7 @@
 {
     "name": "@hiero-enterprise/core",
     "version": "0.1.0",
-    "description": "Core services, repositories, and data models for Hiero/Hedera networks",
+    "description": "Core services, repositories, and data models for the Hiero network",
     "license": "Apache-2.0",
     "type": "module",
     "private": true,
