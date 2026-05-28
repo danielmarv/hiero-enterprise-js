@@ -142,11 +142,12 @@ export class NftClient {
             const response = await (
                 await tx.sign(accountKey)
             ).execute(this.context.client);
+            const receipt = await response.getReceipt(this.context.client);
 
             await this.context.emitAfterTransaction({
                 ...event,
                 transactionId: response.transactionId.toString(),
-                status: "SUCCESS",
+                status: receipt.status.toString(),
                 durationMs: Date.now() - start,
             });
         } catch (error) {
@@ -181,11 +182,12 @@ export class NftClient {
             const response = await (
                 await tx.sign(accountKey)
             ).execute(this.context.client);
+            const receipt = await response.getReceipt(this.context.client);
 
             await this.context.emitAfterTransaction({
                 ...event,
                 transactionId: response.transactionId.toString(),
-                status: "SUCCESS",
+                status: receipt.status.toString(),
                 durationMs: Date.now() - start,
             });
         } catch (error) {
@@ -341,11 +343,12 @@ export class NftClient {
                 ? await tx.sign(supplyKey)
                 : await this.context.signTransaction(tx);
             const response = await signed.execute(this.context.client);
+            const receipt = await response.getReceipt(this.context.client);
 
             await this.context.emitAfterTransaction({
                 ...event,
                 transactionId: response.transactionId.toString(),
-                status: "SUCCESS",
+                status: receipt.status.toString(),
                 durationMs: Date.now() - start,
             });
         } catch (error) {
@@ -422,11 +425,12 @@ export class NftClient {
             const response = await (
                 await tx.sign(fromKey)
             ).execute(this.context.client);
+            const receipt = await response.getReceipt(this.context.client);
 
             await this.context.emitAfterTransaction({
                 ...event,
                 transactionId: response.transactionId.toString(),
-                status: "SUCCESS",
+                status: receipt.status.toString(),
                 durationMs: Date.now() - start,
             });
         } catch (error) {

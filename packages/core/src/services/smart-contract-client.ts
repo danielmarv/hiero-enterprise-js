@@ -181,7 +181,7 @@ export class SmartContractClient {
             await this.context.emitAfterTransaction({
                 ...event,
                 transactionId: response.transactionId.toString(),
-                status: "SUCCESS",
+                status: record.receipt.status.toString(),
                 durationMs: Date.now() - start,
             });
 
@@ -219,11 +219,12 @@ export class SmartContractClient {
                 .setContractId(contractId)
                 .setTransferAccountId(transferAccountId)
                 .execute(this.context.client);
+            const receipt = await response.getReceipt(this.context.client);
 
             await this.context.emitAfterTransaction({
                 ...event,
                 transactionId: response.transactionId.toString(),
-                status: "SUCCESS",
+                status: receipt.status.toString(),
                 durationMs: Date.now() - start,
             });
         } catch (error) {

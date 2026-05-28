@@ -160,11 +160,12 @@ export class FungibleTokenClient {
             const response = await (
                 await tx.sign(accountKey)
             ).execute(this.context.client);
+            const receipt = await response.getReceipt(this.context.client);
 
             await this.context.emitAfterTransaction({
                 ...event,
                 transactionId: response.transactionId.toString(),
-                status: "SUCCESS",
+                status: receipt.status.toString(),
                 durationMs: Date.now() - start,
             });
         } catch (error) {
@@ -203,11 +204,12 @@ export class FungibleTokenClient {
             const response = await (
                 await tx.sign(accountKey)
             ).execute(this.context.client);
+            const receipt = await response.getReceipt(this.context.client);
 
             await this.context.emitAfterTransaction({
                 ...event,
                 transactionId: response.transactionId.toString(),
-                status: "SUCCESS",
+                status: receipt.status.toString(),
                 durationMs: Date.now() - start,
             });
         } catch (error) {
@@ -246,11 +248,12 @@ export class FungibleTokenClient {
             const response = await (
                 await tx.sign(supplyKey)
             ).execute(this.context.client);
+            const receipt = await response.getReceipt(this.context.client);
 
             await this.context.emitAfterTransaction({
                 ...event,
                 transactionId: response.transactionId.toString(),
-                status: "SUCCESS",
+                status: receipt.status.toString(),
                 durationMs: Date.now() - start,
             });
         } catch (error) {
@@ -289,11 +292,12 @@ export class FungibleTokenClient {
             const response = await (
                 await tx.sign(supplyKey)
             ).execute(this.context.client);
+            const receipt = await response.getReceipt(this.context.client);
 
             await this.context.emitAfterTransaction({
                 ...event,
                 transactionId: response.transactionId.toString(),
-                status: "SUCCESS",
+                status: receipt.status.toString(),
                 durationMs: Date.now() - start,
             });
         } catch (error) {
@@ -336,11 +340,12 @@ export class FungibleTokenClient {
             const response = await (
                 await tx.sign(fromKey)
             ).execute(this.context.client);
+            const receipt = await response.getReceipt(this.context.client);
 
             await this.context.emitAfterTransaction({
                 ...event,
                 transactionId: response.transactionId.toString(),
-                status: "SUCCESS",
+                status: receipt.status.toString(),
                 durationMs: Date.now() - start,
             });
         } catch (error) {
