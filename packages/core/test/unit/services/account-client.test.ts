@@ -1,17 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { AccountClient } from "../../../src/services/account-client.js";
 import { createMockContext } from "../../utils/mock-context.js";
-import type { HieroContext } from "../../../src/config/context/hiero-context.js";
+import type { IHieroContext } from "../../../src/context/index.js";
 import {
     AccountCreateTransaction,
     AccountDeleteTransaction,
-    AccountBalanceQuery,
-    TransferTransaction,
+    PrivateKey,
 } from "@hiero-ledger/sdk";
 
 // Mock the SDK
 vi.mock("@hiero-ledger/sdk", async (importOriginal) => {
-    const actual = await importOriginal<typeof import("@hiero-ledger/sdk")>();
+    const actual = await importOriginal<Record<string, unknown>>();
 
     const mockTx = {
         setKeyWithoutAlias: vi.fn().mockReturnThis(),
@@ -56,15 +55,23 @@ vi.mock("@hiero-ledger/sdk", async (importOriginal) => {
 
     return {
         ...actual,
-        AccountCreateTransaction: vi.fn(() => mockTx),
-        AccountDeleteTransaction: vi.fn(() => mockTx),
-        AccountBalanceQuery: vi.fn(() => mockQuery),
-        TransferTransaction: vi.fn(() => mockTx),
+        AccountCreateTransaction: vi.fn(function () {
+            return mockTx;
+        }),
+        AccountDeleteTransaction: vi.fn(function () {
+            return mockTx;
+        }),
+        AccountBalanceQuery: vi.fn(function () {
+            return mockQuery;
+        }),
+        TransferTransaction: vi.fn(function () {
+            return mockTx;
+        }),
     };
 });
 
 describe("AccountClient", () => {
-    let context: HieroContext;
+    let context: IHieroContext;
     let client: AccountClient;
 
     beforeEach(() => {
@@ -117,7 +124,7 @@ describe("AccountClient", () => {
 
     describe("deleteAccount", () => {
         it("deletes an account transferring to operator by default", async () => {
-            const mockKey = { publicKey: "pk" } as any;
+            const mockKey = PrivateKey.generateED25519();
             await client.deleteAccount("0.0.999", mockKey);
 
             const mockInstance = vi.mocked(AccountDeleteTransaction).mock
@@ -129,7 +136,7 @@ describe("AccountClient", () => {
         });
 
         it("deletes an account with custom transfer target", async () => {
-            const mockKey = { publicKey: "pk" } as any;
+            const mockKey = PrivateKey.generateED25519();
             await client.deleteAccount("0.0.999", mockKey, "0.0.555");
 
             const mockInstance = vi.mocked(AccountDeleteTransaction).mock

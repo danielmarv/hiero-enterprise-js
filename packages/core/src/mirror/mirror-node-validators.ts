@@ -122,7 +122,6 @@ function assertField(
     expectedType: "string" | "number" | "boolean",
     path: string,
 ): void {
-    // eslint-disable-next-line valid-typeof
     if (typeof obj[field] !== expectedType) {
         throw mismatch(
             `${path}.${field}`,

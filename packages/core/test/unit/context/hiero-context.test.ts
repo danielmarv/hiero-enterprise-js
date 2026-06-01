@@ -1,11 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { HieroContext } from "../../../src/context/hiero-context.js";
+import type { Transaction } from "@hiero-ledger/sdk";
 import { Client } from "@hiero-ledger/sdk";
 import * as configModule from "../../../src/config/index.js";
 
 // Mock the SDK
 vi.mock("@hiero-ledger/sdk", async (importOriginal) => {
-    const actual = await importOriginal<typeof import("@hiero-ledger/sdk")>();
+    const actual = await importOriginal<Record<string, unknown>>();
 
     const mockClient = {
         setOperator: vi.fn().mockReturnThis(),
@@ -131,19 +132,17 @@ describe("HieroContext", () => {
             const ctx = new HieroContext(validConfig);
             expect(ctx.operatorPublicKey).toBeDefined();
             // The private key is not on the public interface
-            expect((ctx as any)._operatorKey).toBeDefined();
+            expect(
+                (ctx as unknown as Record<string, unknown>)["_operatorKey"],
+            ).toBeDefined();
             expect("operatorKey" in ctx).toBe(false);
-        });
-
-        it("provides getOperatorKey() for internal usage", () => {
-            const ctx = new HieroContext(validConfig);
-            const key = ctx.getOperatorKey();
-            expect(key.toString()).toBe(validConfig.operatorKey);
         });
 
         it("signTransaction signs with the operator key", async () => {
             const ctx = new HieroContext(validConfig);
-            const mockTx = { sign: vi.fn().mockResolvedValue("signed") } as any;
+            const mockTx = {
+                sign: vi.fn().mockResolvedValue("signed"),
+            } as unknown as Transaction;
             const result = await ctx.signTransaction(mockTx);
             expect(mockTx.sign).toHaveBeenCalled();
             expect(result).toBe("signed");

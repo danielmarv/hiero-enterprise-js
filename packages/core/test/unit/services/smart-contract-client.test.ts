@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { SmartContractClient } from "../../../src/services/smart-contract-client.js";
 import { createMockContext } from "../../utils/mock-context.js";
-import type { HieroContext } from "../../../src/context/hiero-context.js";
+import type { IHieroContext } from "../../../src/context/index.js";
 import {
     ContractCreateTransaction,
     ContractCreateFlow,
@@ -10,7 +10,7 @@ import {
 } from "@hiero-ledger/sdk";
 
 vi.mock("@hiero-ledger/sdk", async (importOriginal) => {
-    const actual = await importOriginal<typeof import("@hiero-ledger/sdk")>();
+    const actual = await importOriginal<Record<string, unknown>>();
 
     const mockContractResult = {
         gasUsed: { toNumber: () => 50000 },
@@ -37,21 +37,30 @@ vi.mock("@hiero-ledger/sdk", async (importOriginal) => {
             }),
             getRecord: vi.fn().mockResolvedValue({
                 contractFunctionResult: mockContractResult,
+                receipt: { status: { toString: () => "SUCCESS" } },
             }),
         }),
     };
 
     return {
         ...actual,
-        ContractCreateFlow: vi.fn(() => ({ ...mockTx })),
-        ContractCreateTransaction: vi.fn(() => ({ ...mockTx })),
-        ContractExecuteTransaction: vi.fn(() => ({ ...mockTx })),
-        ContractDeleteTransaction: vi.fn(() => ({ ...mockTx })),
+        ContractCreateFlow: vi.fn(function () {
+            return { ...mockTx };
+        }),
+        ContractCreateTransaction: vi.fn(function () {
+            return { ...mockTx };
+        }),
+        ContractExecuteTransaction: vi.fn(function () {
+            return { ...mockTx };
+        }),
+        ContractDeleteTransaction: vi.fn(function () {
+            return { ...mockTx };
+        }),
     };
 });
 
 describe("SmartContractClient", () => {
-    let context: HieroContext;
+    let context: IHieroContext;
     let client: SmartContractClient;
 
     beforeEach(() => {
@@ -102,14 +111,11 @@ describe("SmartContractClient", () => {
             expect(result.gasUsed).toBe(50000);
             expect(result.contractId).toBe("0.0.999");
 
-            const txMock = vi.mocked(ContractExecuteTransaction).mock
-                .results[0].value;
+            const txMock = vi.mocked(ContractExecuteTransaction).mock.results[0]
+                .value;
             expect(txMock.setContractId).toHaveBeenCalledWith("0.0.999");
             expect(txMock.setGas).toHaveBeenCalledWith(100000);
-            expect(txMock.setFunction).toHaveBeenCalledWith(
-                "greet",
-                undefined,
-            );
+            expect(txMock.setFunction).toHaveBeenCalledWith("greet", undefined);
         });
 
         it("calls a contract function with payable hbars", async () => {
@@ -121,8 +127,8 @@ describe("SmartContractClient", () => {
                 10,
             );
 
-            const txMock = vi.mocked(ContractExecuteTransaction).mock
-                .results[0].value;
+            const txMock = vi.mocked(ContractExecuteTransaction).mock.results[0]
+                .value;
             expect(txMock.setPayableAmount).toHaveBeenCalled();
         });
     });

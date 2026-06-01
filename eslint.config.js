@@ -7,7 +7,7 @@ import { defineConfig, globalIgnores } from "eslint/config";
 import globals from "globals";
 
 export default defineConfig(
-    globalIgnores(["**/dist/**", "**/node_modules/**", "**/*.test.ts"]),
+    globalIgnores(["**/dist/**", "**/node_modules/**"]),
 
     ...tseslint.configs.recommended,
     eslint.configs.recommended,

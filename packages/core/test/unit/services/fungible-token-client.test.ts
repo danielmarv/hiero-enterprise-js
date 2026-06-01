@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { FungibleTokenClient } from "../../../src/services/fungible-token-client.js";
 import { createMockContext } from "../../utils/mock-context.js";
-import type { HieroContext } from "../../../src/context/hiero-context.js";
+import type { IHieroContext } from "../../../src/context/index.js";
 import {
     TokenCreateTransaction,
     TokenType,
@@ -14,7 +14,7 @@ import {
 } from "@hiero-ledger/sdk";
 
 vi.mock("@hiero-ledger/sdk", async (importOriginal) => {
-    const actual = await importOriginal<typeof import("@hiero-ledger/sdk")>();
+    const actual = await importOriginal<Record<string, unknown>>();
 
     const mockTx = {
         setTokenName: vi.fn().mockReturnThis(),
@@ -53,17 +53,29 @@ vi.mock("@hiero-ledger/sdk", async (importOriginal) => {
 
     return {
         ...actual,
-        TokenCreateTransaction: vi.fn(() => ({ ...mockTx })),
-        TokenAssociateTransaction: vi.fn(() => ({ ...mockTx })),
-        TokenDissociateTransaction: vi.fn(() => ({ ...mockTx })),
-        TokenMintTransaction: vi.fn(() => ({ ...mockTx })),
-        TokenBurnTransaction: vi.fn(() => ({ ...mockTx })),
-        TransferTransaction: vi.fn(() => ({ ...mockTx })),
+        TokenCreateTransaction: vi.fn(function () {
+            return { ...mockTx };
+        }),
+        TokenAssociateTransaction: vi.fn(function () {
+            return { ...mockTx };
+        }),
+        TokenDissociateTransaction: vi.fn(function () {
+            return { ...mockTx };
+        }),
+        TokenMintTransaction: vi.fn(function () {
+            return { ...mockTx };
+        }),
+        TokenBurnTransaction: vi.fn(function () {
+            return { ...mockTx };
+        }),
+        TransferTransaction: vi.fn(function () {
+            return { ...mockTx };
+        }),
     };
 });
 
 describe("FungibleTokenClient", () => {
-    let context: HieroContext;
+    let context: IHieroContext;
     let client: FungibleTokenClient;
 
     beforeEach(() => {
@@ -78,7 +90,7 @@ describe("FungibleTokenClient", () => {
                 name: "Test Token",
                 symbol: "TST",
                 treasuryAccountId: context.operatorAccountId,
-                treasuryKey: context.getOperatorKey(),
+                treasuryKey: PrivateKey.generateED25519(),
             });
 
             expect(tokenId).toBe("0.0.999");
@@ -107,7 +119,7 @@ describe("FungibleTokenClient", () => {
                 maxSupply: 5000,
                 memo: "the memo",
                 treasuryAccountId: "0.0.555",
-                treasuryKey: context.getOperatorKey(),
+                treasuryKey: PrivateKey.generateED25519(),
             });
 
             const txMock = vi.mocked(TokenCreateTransaction).mock.results[0]
@@ -122,7 +134,7 @@ describe("FungibleTokenClient", () => {
 
     describe("associateToken", () => {
         it("associates a token with an account", async () => {
-            const dummyKey = context.getOperatorKey();
+            const dummyKey = PrivateKey.generateED25519();
             await client.associateToken("0.0.999", "0.0.555", dummyKey);
 
             const txMock = vi.mocked(TokenAssociateTransaction).mock.results[0]
@@ -136,7 +148,7 @@ describe("FungibleTokenClient", () => {
 
     describe("dissociateToken", () => {
         it("dissociates a token from an account", async () => {
-            const dummyKey = context.getOperatorKey();
+            const dummyKey = PrivateKey.generateED25519();
             await client.dissociateToken("0.0.999", "0.0.555", dummyKey);
 
             const txMock = vi.mocked(TokenDissociateTransaction).mock.results[0]
@@ -150,7 +162,11 @@ describe("FungibleTokenClient", () => {
 
     describe("mintToken", () => {
         it("mints additional token supply", async () => {
-            await client.mintToken("0.0.999", 500, context.getOperatorKey());
+            await client.mintToken(
+                "0.0.999",
+                500,
+                PrivateKey.generateED25519(),
+            );
 
             const txMock =
                 vi.mocked(TokenMintTransaction).mock.results[0].value;
@@ -163,7 +179,11 @@ describe("FungibleTokenClient", () => {
 
     describe("burnToken", () => {
         it("burns token supply", async () => {
-            await client.burnToken("0.0.999", 100, context.getOperatorKey());
+            await client.burnToken(
+                "0.0.999",
+                100,
+                PrivateKey.generateED25519(),
+            );
 
             const txMock =
                 vi.mocked(TokenBurnTransaction).mock.results[0].value;
@@ -176,7 +196,7 @@ describe("FungibleTokenClient", () => {
 
     describe("transferToken", () => {
         it("transfers tokens between accounts", async () => {
-            const dummyKey = context.getOperatorKey();
+            const dummyKey = PrivateKey.generateED25519();
 
             await client.transferToken(
                 "0.0.999",

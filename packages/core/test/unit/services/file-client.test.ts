@@ -1,18 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { FileClient } from "../../../src/services/file-client.js";
 import { createMockContext } from "../../utils/mock-context.js";
-import type { HieroContext } from "../../../src/context/hiero-context.js";
+import type { IHieroContext } from "../../../src/context/index.js";
 import {
     FileCreateTransaction,
     FileContentsQuery,
     FileUpdateTransaction,
     FileDeleteTransaction,
     FileAppendTransaction,
-    FileInfoQuery,
 } from "@hiero-ledger/sdk";
 
 vi.mock("@hiero-ledger/sdk", async (importOriginal) => {
-    const actual = await importOriginal<typeof import("@hiero-ledger/sdk")>();
+    const actual = await importOriginal<Record<string, unknown>>();
 
     const mockTx = {
         setKeys: vi.fn().mockReturnThis(),
@@ -44,17 +43,29 @@ vi.mock("@hiero-ledger/sdk", async (importOriginal) => {
 
     return {
         ...actual,
-        FileCreateTransaction: vi.fn(() => ({ ...mockTx })),
-        FileAppendTransaction: vi.fn(() => ({ ...mockTx })),
-        FileUpdateTransaction: vi.fn(() => ({ ...mockTx })),
-        FileDeleteTransaction: vi.fn(() => ({ ...mockTx })),
-        FileContentsQuery: vi.fn(() => ({ ...mockContentsQuery })),
-        FileInfoQuery: vi.fn(() => ({ ...mockInfoQuery })),
+        FileCreateTransaction: vi.fn(function () {
+            return { ...mockTx };
+        }),
+        FileAppendTransaction: vi.fn(function () {
+            return { ...mockTx };
+        }),
+        FileUpdateTransaction: vi.fn(function () {
+            return { ...mockTx };
+        }),
+        FileDeleteTransaction: vi.fn(function () {
+            return { ...mockTx };
+        }),
+        FileContentsQuery: vi.fn(function () {
+            return { ...mockContentsQuery };
+        }),
+        FileInfoQuery: vi.fn(function () {
+            return { ...mockInfoQuery };
+        }),
     };
 });
 
 describe("FileClient", () => {
-    let context: HieroContext;
+    let context: IHieroContext;
     let client: FileClient;
 
     beforeEach(() => {
@@ -100,8 +111,8 @@ describe("FileClient", () => {
 
             expect(contents).toEqual(new Uint8Array([1, 2, 3]));
 
-            const queryMock = vi.mocked(FileContentsQuery).mock.results[0]
-                .value;
+            const queryMock =
+                vi.mocked(FileContentsQuery).mock.results[0].value;
             expect(queryMock.setFileId).toHaveBeenCalledWith("0.0.999");
             expect(queryMock.execute).toHaveBeenCalledWith(context.client);
         });

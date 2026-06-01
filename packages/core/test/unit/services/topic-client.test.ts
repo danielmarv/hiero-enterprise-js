@@ -1,16 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { TopicClient } from "../../../src/services/topic-client.js";
 import { createMockContext } from "../../utils/mock-context.js";
-import type { HieroContext } from "../../../src/config/context/hiero-context.js";
+import type { IHieroContext } from "../../../src/context/index.js";
 import {
     TopicCreateTransaction,
-    TopicUpdateTransaction,
     TopicDeleteTransaction,
     TopicMessageSubmitTransaction,
+    PrivateKey,
 } from "@hiero-ledger/sdk";
 
 vi.mock("@hiero-ledger/sdk", async (importOriginal) => {
-    const actual = await importOriginal<typeof import("@hiero-ledger/sdk")>();
+    const actual = await importOriginal<Record<string, unknown>>();
 
     const mockTx = {
         setTopicMemo: vi.fn().mockReturnThis(),
@@ -41,15 +41,23 @@ vi.mock("@hiero-ledger/sdk", async (importOriginal) => {
 
     return {
         ...actual,
-        TopicCreateTransaction: vi.fn(() => ({ ...mockTx })),
-        TopicUpdateTransaction: vi.fn(() => ({ ...mockTx })),
-        TopicDeleteTransaction: vi.fn(() => ({ ...mockTx })),
-        TopicMessageSubmitTransaction: vi.fn(() => ({ ...mockTx })),
+        TopicCreateTransaction: vi.fn(function () {
+            return { ...mockTx };
+        }),
+        TopicUpdateTransaction: vi.fn(function () {
+            return { ...mockTx };
+        }),
+        TopicDeleteTransaction: vi.fn(function () {
+            return { ...mockTx };
+        }),
+        TopicMessageSubmitTransaction: vi.fn(function () {
+            return { ...mockTx };
+        }),
     };
 });
 
 describe("TopicClient", () => {
-    let context: HieroContext;
+    let context: IHieroContext;
     let client: TopicClient;
 
     beforeEach(() => {
@@ -80,7 +88,7 @@ describe("TopicClient", () => {
 
     describe("createPrivateTopic", () => {
         it("creates a private topic with submit key", async () => {
-            const submitKey = context.getOperatorKey();
+            const submitKey = PrivateKey.generateED25519();
             const topicId = await client.createPrivateTopic({ submitKey });
 
             expect(topicId).toBe("0.0.888");
@@ -113,7 +121,7 @@ describe("TopicClient", () => {
         });
 
         it("submits a message with submit key signing", async () => {
-            const submitKey = context.getOperatorKey();
+            const submitKey = PrivateKey.generateED25519();
             await client.submitMessage("0.0.888", "hello", submitKey);
 
             const txMock = vi.mocked(TopicMessageSubmitTransaction).mock

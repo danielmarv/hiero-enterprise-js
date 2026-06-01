@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { AccountClient } from "../../../src/services/account-client.js";
 import { createMockContext } from "../../utils/mock-context.js";
-import type { HieroContext } from "../../../src/context/hiero-context.js";
+import type { IHieroContext } from "../../../src/context/index.js";
 import type {
     TransactionListener,
     TransactionEvent,
 } from "../../../src/listeners/index.js";
 
 vi.mock("@hiero-ledger/sdk", async (importOriginal) => {
-    const actual = await importOriginal<typeof import("@hiero-ledger/sdk")>();
+    const actual = await importOriginal<Record<string, unknown>>();
 
     const mockTx = {
         setKeyWithoutAlias: vi.fn().mockReturnThis(),
@@ -27,12 +27,14 @@ vi.mock("@hiero-ledger/sdk", async (importOriginal) => {
 
     return {
         ...actual,
-        AccountCreateTransaction: vi.fn(() => mockTx),
+        AccountCreateTransaction: vi.fn(function () {
+            return mockTx;
+        }),
     };
 });
 
 describe("Transaction Listeners", () => {
-    let context: HieroContext;
+    let context: IHieroContext;
     let client: AccountClient;
     const beforeEvents: TransactionEvent[] = [];
     const afterEvents: TransactionEvent[] = [];
@@ -109,7 +111,7 @@ describe("Transaction Listeners", () => {
                     setKeyWithoutAlias: vi.fn().mockReturnThis(),
                     setInitialBalance: vi.fn().mockReturnThis(),
                     execute: vi.fn().mockRejectedValue(new Error("TX_FAILED")),
-                }) as any,
+                }) as unknown as InstanceType<typeof AccountCreateTransaction>,
         );
 
         const listener: TransactionListener = {

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { NftRepository } from "../../../src/repositories/nft-repository.js";
 import { createMockMirrorNodeClient } from "../../../src/testing/index.js";
+import type { MirrorNodeClient } from "../../../src/mirror/index.js";
 
 describe("NftRepository", () => {
     let repo: NftRepository;
@@ -8,7 +9,7 @@ describe("NftRepository", () => {
 
     beforeEach(() => {
         mockClient = createMockMirrorNodeClient();
-        repo = new NftRepository(mockClient as any);
+        repo = new NftRepository(mockClient as unknown as MirrorNodeClient);
     });
 
     it("delegates findByOwner to queryNftsByAccount", async () => {

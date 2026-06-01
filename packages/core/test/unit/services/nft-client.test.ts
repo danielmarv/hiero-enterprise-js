@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NftClient } from "../../../src/services/nft-client.js";
 import { createMockContext } from "../../utils/mock-context.js";
-import type { HieroContext } from "../../../src/context/hiero-context.js";
+import type { IHieroContext } from "../../../src/context/index.js";
 import {
     TokenCreateTransaction,
     TokenType,
@@ -11,10 +11,11 @@ import {
     TokenMintTransaction,
     TokenBurnTransaction,
     TransferTransaction,
+    PrivateKey,
 } from "@hiero-ledger/sdk";
 
 vi.mock("@hiero-ledger/sdk", async (importOriginal) => {
-    const actual = await importOriginal<typeof import("@hiero-ledger/sdk")>();
+    const actual = await importOriginal<Record<string, unknown>>();
 
     const mockTx = {
         setTokenName: vi.fn().mockReturnThis(),
@@ -57,17 +58,29 @@ vi.mock("@hiero-ledger/sdk", async (importOriginal) => {
 
     return {
         ...actual,
-        TokenCreateTransaction: vi.fn(() => ({ ...mockTx })),
-        TokenAssociateTransaction: vi.fn(() => ({ ...mockTx })),
-        TokenDissociateTransaction: vi.fn(() => ({ ...mockTx })),
-        TokenMintTransaction: vi.fn(() => ({ ...mockTx })),
-        TokenBurnTransaction: vi.fn(() => ({ ...mockTx })),
-        TransferTransaction: vi.fn(() => ({ ...mockTx })),
+        TokenCreateTransaction: vi.fn(function () {
+            return { ...mockTx };
+        }),
+        TokenAssociateTransaction: vi.fn(function () {
+            return { ...mockTx };
+        }),
+        TokenDissociateTransaction: vi.fn(function () {
+            return { ...mockTx };
+        }),
+        TokenMintTransaction: vi.fn(function () {
+            return { ...mockTx };
+        }),
+        TokenBurnTransaction: vi.fn(function () {
+            return { ...mockTx };
+        }),
+        TransferTransaction: vi.fn(function () {
+            return { ...mockTx };
+        }),
     };
 });
 
 describe("NftClient", () => {
-    let context: HieroContext;
+    let context: IHieroContext;
     let client: NftClient;
 
     beforeEach(() => {
@@ -118,7 +131,7 @@ describe("NftClient", () => {
 
     describe("associateNft", () => {
         it("associates an NFT with an account", async () => {
-            const dummyKey = context.getOperatorKey();
+            const dummyKey = PrivateKey.generateED25519();
             await client.associateNft("0.0.999", "0.0.555", dummyKey);
 
             const txMock = vi.mocked(TokenAssociateTransaction).mock.results[0]
@@ -132,11 +145,11 @@ describe("NftClient", () => {
 
     describe("dissociateNft", () => {
         it("dissociates an NFT from an account", async () => {
-            const dummyKey = context.getOperatorKey();
+            const dummyKey = PrivateKey.generateED25519();
             await client.dissociateNft("0.0.999", "0.0.555", dummyKey);
 
-            const txMock = vi.mocked(TokenDissociateTransaction).mock
-                .results[0].value;
+            const txMock = vi.mocked(TokenDissociateTransaction).mock.results[0]
+                .value;
             expect(txMock.setAccountId).toHaveBeenCalledWith("0.0.555");
             expect(txMock.setTokenIds).toHaveBeenCalledWith(["0.0.999"]);
         });
@@ -184,7 +197,7 @@ describe("NftClient", () => {
 
     describe("transferNfts", () => {
         it("transfers NFTs", async () => {
-            const dummyKey = context.getOperatorKey();
+            const dummyKey = PrivateKey.generateED25519();
 
             await client.transferNfts(
                 "0.0.999",
@@ -194,8 +207,7 @@ describe("NftClient", () => {
                 "0.0.2",
             );
 
-            const txMock =
-                vi.mocked(TransferTransaction).mock.results[0].value;
+            const txMock = vi.mocked(TransferTransaction).mock.results[0].value;
             expect(txMock.addNftTransfer).toHaveBeenCalledTimes(2);
         });
     });

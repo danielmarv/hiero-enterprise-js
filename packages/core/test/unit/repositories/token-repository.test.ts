@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { TokenRepository } from "../../../src/repositories/token-repository.js";
 import { createMockMirrorNodeClient } from "../../../src/testing/index.js";
+import type { MirrorNodeClient } from "../../../src/mirror/index.js";
 
 describe("TokenRepository", () => {
     let repo: TokenRepository;
@@ -8,7 +9,7 @@ describe("TokenRepository", () => {
 
     beforeEach(() => {
         mockClient = createMockMirrorNodeClient();
-        repo = new TokenRepository(mockClient as any);
+        repo = new TokenRepository(mockClient as unknown as MirrorNodeClient);
     });
 
     it("delegates findById to queryTokenById", async () => {

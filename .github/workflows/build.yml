@@ -76,10 +76,18 @@ jobs:
             - name: Build packages
               run: pnpm run build
 
-            - name: Run unit and integration tests
+            - name: Run integration tests
               env:
                   HIERO_NETWORK: hiero-solo-action
                   HIERO_OPERATOR_ID: ${{ steps.solo.outputs.accountId }}
                   HIERO_OPERATOR_KEY: ${{ steps.solo.outputs.privateKey }}
                   HIERO_MIRROR_NODE_URL: http://localhost:5551
-              run: pnpm run test
+              run: pnpm run test:integration
+
+            - name: Run unit tests
+              env:
+                  HIERO_NETWORK: hiero-solo-action
+                  HIERO_OPERATOR_ID: ${{ steps.solo.outputs.accountId }}
+                  HIERO_OPERATOR_KEY: ${{ steps.solo.outputs.privateKey }}
+                  HIERO_MIRROR_NODE_URL: http://localhost:5551
+              run: pnpm run test:unit
