@@ -27,7 +27,7 @@ export function setupIntegrationTestEnv(): HieroContext {
     const localClient = Client.forNetwork({
         "127.0.0.1:50211": "0.0.3",
     });
-    localClient.setOperator(ctx.operatorAccountId, ctx.getOperatorKey());
+    localClient.setOperator(ctx.operatorAccountId, SOLO_OPERATOR_KEY);
 
     // @ts-expect-error test-only override of readonly client
     ctx.client = localClient;
