@@ -48,7 +48,7 @@ jobs:
             - run: pnpm install --frozen-lockfile
 
             - name: Setup Hiero Solo Network
-              uses: hiero-ledger/hiero-solo-action@328bc84c3b00a990a151418144fd682a4eb76ea6 # v0.19.0
+              uses: hiero-ledger/hiero-solo-action@12b0cdd6291c98df091d43038f57440c2bc430f2 # v0.20.0
               id: solo
               with:
                   installMirrorNode: true
