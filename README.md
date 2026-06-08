@@ -49,10 +49,10 @@ context.close();
 ### With a framework
 
 ```bash
-# Install core + your framework adapter
-npm install @hiero-enterprise/core @hiero-enterprise/express
-npm install @hiero-enterprise/core @hiero-enterprise/fastify
-npm install @hiero-enterprise/core @hiero-enterprise/nest
+# Install your framework adapter 
+npm install @hiero-enterprise/express
+npm install @hiero-enterprise/fastify
+npm install @hiero-enterprise/nest
 ```
 
 Set your operator credentials as environment variables:
