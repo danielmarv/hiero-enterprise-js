@@ -1,62 +1,71 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { setupIntegrationTestEnv } from "../utils/env.js";
 import { waitForMirrorNodeRecord } from "../utils/mirror-node.js";
-import { AccountService } from "../../src/services/account-service.js";
+import {
+    AccountService,
+    FungibleTokenService,
+    NftService,
+} from "../../src/services/index.js";
 import { AccountType } from "../../src/types/index.js";
 import { PrivateKey } from "@hiero-ledger/sdk";
 
 describe("AccountService [Integration]", () => {
     let client: AccountService;
+    let tokenService: FungibleTokenService;
+    let nftService: NftService;
 
     beforeAll(() => {
         // Setup internal context to point directly at localhost nodes
         const ctx = setupIntegrationTestEnv();
         client = new AccountService(ctx);
+        tokenService = new FungibleTokenService(ctx);
+        nftService = new NftService(ctx);
     });
 
-    it("creates an ED25519 (NATIVE) account, validates balance, and confirms creation on Mirror Node", async () => {
-        const initialBalance = 15; // Hbars
+    it("creates an ED25519 account with a user-provided public key", async () => {
+        const newKey = PrivateKey.generateED25519();
         const account = await client.createAccount({
-            initialBalance,
+            publicKey: newKey.publicKey.toString(),
+            keyType: AccountType.ED25519,
+            initialBalance: 15,
             memo: "E2E Test Native",
         });
 
         expect(account.accountId).toBeDefined();
-        expect(account.privateKey).toBeDefined();
-        expect(account.evmAddress).toBeUndefined(); // Native does not map to evm alias explicitly
+        expect(account.publicKey).toBeDefined();
+        expect(account.evmAddress).toBeUndefined();
 
         // Wait for consensus propagation to Mirror Node locally
         await waitForMirrorNodeRecord();
 
-        // Since we don't return the exact TxID from createAccount, we can query balance directly from consensus node:
         const balance = await client.getAccountBalance(account.accountId);
-        expect(balance.hbars).toBe(String(initialBalance * 100_000_000));
+        expect(balance.hbars).toBe(String(15 * 100_000_000));
 
-        // Let's delete it natively (funds to operator)
-        await client.deleteAccount(account.accountId, account.privateKey!);
+        // Delete using the key we generated
+        await client.deleteAccount({
+            accountId: account.accountId,
+            accountKey: newKey,
+        });
 
-        // It takes a second for the delete transaction to reflect definitively on balance
         await waitForMirrorNodeRecord();
 
-        // Once deleted natively, the consensus node will throw ACCOUNT_DELETED rather than return a 0 balance
         await expect(
             client.getAccountBalance(account.accountId),
         ).rejects.toThrow(/ACCOUNT_DELETED/);
-    }, 25000); // Give consensus enough time to run locally
+    }, 25000);
 
-    it("creates an ECDSA (EVM) hollow account, bypassing NATIVE setup entirely", async () => {
-        const dummyKey = PrivateKey.generateECDSA().publicKey.toString();
+    it("creates an ECDSA account with derived EVM alias", async () => {
+        const ecdsaKey = PrivateKey.generateECDSA();
 
-        // 1. We create bypassing a direct SDK wrapper proxy (BYOK Scenario)
-        const account = await client.createAccountWithPublicKey(
-            dummyKey,
-            AccountType.EVM,
-            5,
-            "EVM Hollow Test",
-        );
+        const account = await client.createAccount({
+            publicKey: ecdsaKey.publicKey.toString(),
+            keyType: AccountType.ECDSA,
+            alias: true,
+            initialBalance: 5,
+            memo: "EVM Alias Test",
+        });
 
         expect(account.accountId).toBeDefined();
-        // The EVM alias MUST be mapped and explicitly match the hash of the key
         expect(account.evmAddress).toBeDefined();
 
         const balance = await client.getAccountBalance(account.accountId);
@@ -68,10 +77,120 @@ describe("AccountService [Integration]", () => {
         const coldAddress = "0x1111111111111111111111111111111111111111";
 
         await expect(
-            client.autoCreateEvmAccount(coldAddress, 5),
+            client.autoCreateEvmAccount({ evmAddress: coldAddress, amount: 5 }),
         ).resolves.not.toThrow();
-
-        // Because auto-creation is just a transfer to an alias, it guarantees 5 hbars arrived at the corresponding consensus shard.
-        // But verifying via Mirror Node lookup could take multiple blocks to finalize for aliases.
     }, 20000);
+
+    it("approves an HBAR allowance for a spender account", async () => {
+        const ownerKey = PrivateKey.generateED25519();
+        const owner = await client.createAccount({
+            publicKey: ownerKey.publicKey.toString(),
+            keyType: AccountType.ED25519,
+            initialBalance: 10,
+        });
+
+        const spenderKey = PrivateKey.generateED25519();
+        const spender = await client.createAccount({
+            publicKey: spenderKey.publicKey.toString(),
+            keyType: AccountType.ED25519,
+            initialBalance: 1,
+        });
+
+        await client.approveHbarAllowance({
+            hbarAllowances: [
+                {
+                    ownerAccountId: owner.accountId,
+                    spenderAccountId: spender.accountId,
+                    amount: 5,
+                },
+            ],
+            additionalSigners: [ownerKey],
+        });
+
+        await waitForMirrorNodeRecord();
+    }, 30000);
+
+    it("approves a fungible token allowance for a spender account", async () => {
+        const ownerKey = PrivateKey.generateED25519();
+        const owner = await client.createAccount({
+            publicKey: ownerKey.publicKey.toString(),
+            keyType: AccountType.ED25519,
+            initialBalance: 10,
+        });
+
+        const spenderKey = PrivateKey.generateED25519();
+        const spender = await client.createAccount({
+            publicKey: spenderKey.publicKey.toString(),
+            keyType: AccountType.ED25519,
+            initialBalance: 1,
+        });
+
+        const tokenId = await tokenService.createToken({
+            name: "Allowance Test Token",
+            symbol: "ATT",
+            decimals: 2,
+            initialSupply: 10000,
+            treasuryAccountId: owner.accountId,
+            treasuryKey: ownerKey,
+            supplyKey: ownerKey,
+        });
+
+        await client.approveTokenAllowance({
+            tokenAllowances: [
+                {
+                    tokenId,
+                    ownerAccountId: owner.accountId,
+                    spenderAccountId: spender.accountId,
+                    amount: 500,
+                },
+            ],
+            additionalSigners: [ownerKey],
+        });
+
+        await waitForMirrorNodeRecord();
+    }, 30000);
+
+    it("approves an NFT allowance for specific serials", async () => {
+        const ownerKey = PrivateKey.generateED25519();
+        const owner = await client.createAccount({
+            publicKey: ownerKey.publicKey.toString(),
+            keyType: AccountType.ED25519,
+            initialBalance: 10,
+        });
+
+        const spenderKey = PrivateKey.generateED25519();
+        const spender = await client.createAccount({
+            publicKey: spenderKey.publicKey.toString(),
+            keyType: AccountType.ED25519,
+            initialBalance: 1,
+        });
+
+        const tokenId = await nftService.createNftType({
+            name: "Allowance NFT",
+            symbol: "ANFT",
+            treasuryAccountId: owner.accountId,
+            treasuryKey: ownerKey,
+            supplyKey: ownerKey,
+        });
+
+        await nftService.mintNfts(
+            tokenId,
+            [Buffer.from("meta-1"), Buffer.from("meta-2")],
+            ownerKey,
+        );
+
+        await client.approveNftAllowance({
+            nftAllowances: [
+                {
+                    tokenId,
+                    ownerAccountId: owner.accountId,
+                    spenderAccountId: spender.accountId,
+                    serialNumbers: [1, 2],
+                },
+            ],
+            additionalSigners: [ownerKey],
+        });
+
+        await waitForMirrorNodeRecord();
+    }, 30000);
 });
