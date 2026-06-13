@@ -64,6 +64,8 @@ jobs:
                     echo "Attempt $i/60 — waiting 5s..."
                     sleep 5
                   done
+              env:
+                  HIERO_MIRROR_NODE_URL: http://localhost:38081
             - name: ESLint
               run: pnpm run lint
 
@@ -75,6 +77,8 @@ jobs:
                   HIERO_NETWORK: hiero-solo-action
                   HIERO_OPERATOR_ID: ${{ steps.solo.outputs.accountId }}
                   HIERO_OPERATOR_KEY: ${{ steps.solo.outputs.privateKey }}
+                  HIERO_OPERATOR_KEY_TYPE: der
+                  HIERO_NETWORK_NODES: "127.0.0.1:35211=0.0.3"
                   HIERO_MIRROR_NODE_URL: http://localhost:38081
               run: pnpm run test:integration
 
@@ -83,7 +87,6 @@ jobs:
                   HIERO_NETWORK: hiero-solo-action
                   HIERO_OPERATOR_ID: ${{ steps.solo.outputs.accountId }}
                   HIERO_OPERATOR_KEY: ${{ steps.solo.outputs.privateKey }}
-                  HIERO_MIRROR_NODE_URL: http://localhost:38081
               run: pnpm run test:unit
 
             - name: Run examples

@@ -1,8 +1,6 @@
 import { IntegrationTracker } from "./env.js";
 
-// Standard Hashgraph Solo mirror-node REST API port natively maps to 8081 (or 38081 in GitHub Actions)
-const LOCAL_MIRROR_URL =
-    process.env.HIERO_MIRROR_NODE_URL || "http://127.0.0.1:8081";
+const LOCAL_MIRROR_URL = process.env.HIERO_MIRROR_NODE_URL;
 
 /**
  * Polls the local Mirror Node REST API until the most recent transaction ID

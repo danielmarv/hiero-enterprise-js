@@ -9,6 +9,35 @@ import {
 import { AccountType } from "../../src/types/index.js";
 import { PrivateKey } from "@hiero-ledger/sdk";
 
+const MIRROR_URL = process.env.HIERO_MIRROR_NODE_URL;
+
+interface MirrorAllowance {
+    owner: string;
+    spender: string;
+    amount?: number;
+    token_id?: string;
+}
+
+async function queryHbarAllowances(
+    ownerAccountId: string,
+): Promise<MirrorAllowance[]> {
+    const res = await fetch(
+        `${MIRROR_URL}/api/v1/accounts/${ownerAccountId}/allowances/crypto`,
+    );
+    const data = (await res.json()) as { allowances?: MirrorAllowance[] };
+    return data.allowances ?? [];
+}
+
+async function queryTokenAllowances(
+    ownerAccountId: string,
+): Promise<MirrorAllowance[]> {
+    const res = await fetch(
+        `${MIRROR_URL}/api/v1/accounts/${ownerAccountId}/allowances/tokens`,
+    );
+    const data = (await res.json()) as { allowances?: MirrorAllowance[] };
+    return data.allowances ?? [];
+}
+
 describe("AccountService [Integration]", () => {
     let client: AccountService;
     let tokenService: FungibleTokenService;
@@ -108,6 +137,11 @@ describe("AccountService [Integration]", () => {
         });
 
         await waitForMirrorNodeRecord();
+
+        const allowances = await queryHbarAllowances(owner.accountId);
+        const match = allowances.find((a) => a.spender === spender.accountId);
+        expect(match).toBeDefined();
+        expect(match!.amount).toBe(500_000_000); // 5 HBAR in tinybars
     }, 30000);
 
     it("approves a fungible token allowance for a spender account", async () => {
@@ -148,6 +182,13 @@ describe("AccountService [Integration]", () => {
         });
 
         await waitForMirrorNodeRecord();
+
+        const allowances = await queryTokenAllowances(owner.accountId);
+        const match = allowances.find(
+            (a) => a.spender === spender.accountId && a.token_id === tokenId,
+        );
+        expect(match).toBeDefined();
+        expect(match!.amount).toBe(500);
     }, 30000);
 
     it("approves an NFT allowance for specific serials", async () => {
@@ -192,5 +233,18 @@ describe("AccountService [Integration]", () => {
         });
 
         await waitForMirrorNodeRecord();
+
+        // Per-serial allowances are visible on individual NFT records, not the account allowances endpoint
+        for (const serial of [1, 2]) {
+            const res = await fetch(
+                `${MIRROR_URL}/api/v1/tokens/${tokenId}/nfts/${serial}`,
+            );
+            const nft = (await res.json()) as {
+                spender?: string;
+                token_id?: string;
+                serial_number?: number;
+            };
+            expect(nft.spender).toBe(spender.accountId);
+        }
     }, 30000);
 });

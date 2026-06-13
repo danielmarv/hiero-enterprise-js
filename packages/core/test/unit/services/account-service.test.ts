@@ -8,6 +8,10 @@ import {
     AccountDeleteTransaction,
     AccountAllowanceApproveTransaction,
     PrivateKey,
+    Hbar,
+    TokenId,
+    NftId,
+    AccountId,
 } from "@hiero-ledger/sdk";
 
 // ─── Shared mock fixtures ───────────────────────────────────────────────────
@@ -392,7 +396,7 @@ describe("AccountService", () => {
     // approveHbarAllowance
 
     describe("approveHbarAllowance", () => {
-        it("approves an HBAR allowance", async () => {
+        it("approves an HBAR allowance with correct SDK arguments", async () => {
             await service.approveHbarAllowance({
                 hbarAllowances: [
                     {
@@ -405,7 +409,11 @@ describe("AccountService", () => {
 
             const tx = vi.mocked(AccountAllowanceApproveTransaction).mock
                 .results[0].value;
-            expect(tx.approveHbarAllowance).toHaveBeenCalled();
+            expect(tx.approveHbarAllowance).toHaveBeenCalledWith(
+                "0.0.100",
+                "0.0.200",
+                new Hbar(10),
+            );
             expect(tx.execute).toHaveBeenCalledWith(context.client);
         });
 
@@ -433,7 +441,7 @@ describe("AccountService", () => {
     // approveTokenAllowance
 
     describe("approveTokenAllowance", () => {
-        it("approves a fungible token allowance", async () => {
+        it("approves a fungible token allowance with correct SDK arguments", async () => {
             await service.approveTokenAllowance({
                 tokenAllowances: [
                     {
@@ -447,14 +455,19 @@ describe("AccountService", () => {
 
             const tx = vi.mocked(AccountAllowanceApproveTransaction).mock
                 .results[0].value;
-            expect(tx.approveTokenAllowance).toHaveBeenCalled();
+            expect(tx.approveTokenAllowance).toHaveBeenCalledWith(
+                "0.0.500",
+                "0.0.100",
+                "0.0.200",
+                BigInt(5000),
+            );
         });
     });
 
     // approveNftAllowance
 
     describe("approveNftAllowance", () => {
-        it("approves NFT allowance with specific serials", async () => {
+        it("approves NFT allowance with correct SDK arguments per serial", async () => {
             await service.approveNftAllowance({
                 nftAllowances: [
                     {
@@ -469,9 +482,24 @@ describe("AccountService", () => {
             const tx = vi.mocked(AccountAllowanceApproveTransaction).mock
                 .results[0].value;
             expect(tx.approveTokenNftAllowance).toHaveBeenCalledTimes(3);
+            expect(tx.approveTokenNftAllowance).toHaveBeenCalledWith(
+                new NftId(TokenId.fromString("0.0.600"), 1),
+                "0.0.100",
+                "0.0.200",
+            );
+            expect(tx.approveTokenNftAllowance).toHaveBeenCalledWith(
+                new NftId(TokenId.fromString("0.0.600"), 2),
+                "0.0.100",
+                "0.0.200",
+            );
+            expect(tx.approveTokenNftAllowance).toHaveBeenCalledWith(
+                new NftId(TokenId.fromString("0.0.600"), 3),
+                "0.0.100",
+                "0.0.200",
+            );
         });
 
-        it("approves NFT allowance for all serials", async () => {
+        it("approves NFT allowance for all serials with correct SDK arguments", async () => {
             await service.approveNftAllowance({
                 nftAllowances: [
                     {
@@ -485,10 +513,14 @@ describe("AccountService", () => {
 
             const tx = vi.mocked(AccountAllowanceApproveTransaction).mock
                 .results[0].value;
-            expect(tx.approveTokenNftAllowanceAllSerials).toHaveBeenCalled();
+            expect(tx.approveTokenNftAllowanceAllSerials).toHaveBeenCalledWith(
+                TokenId.fromString("0.0.600"),
+                "0.0.100",
+                "0.0.200",
+            );
         });
 
-        it("approves NFT allowance with delegatingSpender", async () => {
+        it("calls approveTokenNftAllowanceWithDelegatingSpender with correct SDK arguments", async () => {
             await service.approveNftAllowance({
                 nftAllowances: [
                     {
@@ -506,6 +538,22 @@ describe("AccountService", () => {
             expect(
                 tx.approveTokenNftAllowanceWithDelegatingSpender,
             ).toHaveBeenCalledTimes(2);
+            expect(
+                tx.approveTokenNftAllowanceWithDelegatingSpender,
+            ).toHaveBeenCalledWith(
+                new NftId(TokenId.fromString("0.0.600"), 1),
+                "0.0.100",
+                AccountId.fromString("0.0.200"),
+                "0.0.300",
+            );
+            expect(
+                tx.approveTokenNftAllowanceWithDelegatingSpender,
+            ).toHaveBeenCalledWith(
+                new NftId(TokenId.fromString("0.0.600"), 2),
+                "0.0.100",
+                AccountId.fromString("0.0.200"),
+                "0.0.300",
+            );
             expect(tx.approveTokenNftAllowance).not.toHaveBeenCalled();
         });
 
