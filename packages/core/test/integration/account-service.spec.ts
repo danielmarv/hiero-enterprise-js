@@ -233,30 +233,18 @@ describe("AccountService [Integration]", () => {
         });
 
         await waitForMirrorNodeRecord();
-        // NFT allowances may need extra propagation time on the mirror node
-        await new Promise((r) => setTimeout(r, 3000));
 
-        const res = await fetch(
-            `${MIRROR_URL}/api/v1/accounts/${owner.accountId}/allowances/nfts`,
-        );
-        const data = (await res.json()) as {
-            allowances?: {
-                owner: string;
-                spender: string;
-                token_id: string;
-                serial_numbers?: number[];
-                approved_for_all?: boolean;
-            }[];
-        };
-
-        const match = (data.allowances ?? []).find(
-            (a) => a.spender === spender.accountId && a.token_id === tokenId,
-        );
-
-        expect(match).toBeDefined();
-        expect(match?.approved_for_all).not.toBe(true);
-        expect(match?.serial_numbers ?? []).toEqual(
-            expect.arrayContaining([1, 2]),
-        );
+        // Per-serial allowances are visible on individual NFT records, not the account allowances endpoint
+        for (const serial of [1, 2]) {
+            const res = await fetch(
+                `${MIRROR_URL}/api/v1/tokens/${tokenId}/nfts/${serial}`,
+            );
+            const nft = (await res.json()) as {
+                spender?: string;
+                token_id?: string;
+                serial_number?: number;
+            };
+            expect(nft.spender).toBe(spender.accountId);
+        }
     }, 30000);
 });
