@@ -23,7 +23,7 @@
         "build": "tsc",
         "clean": "rm -rf dist",
         "test:unit": "vitest run test/unit",
-        "test:integration": "vitest run -c vitest.config.integration.ts",
+        "test:integration": "vitest run -c test/vitest.config.integration.ts",
         "test": "pnpm run test:unit && pnpm run test:integration",
         "test:watch": "vitest test/unit"
     },
@@ -31,8 +31,8 @@
         "@hiero-ledger/sdk": "^2.84.0"
     },
     "devDependencies": {
-        "vitest": "^4.1.7",
-        "@types/node": "^25.9.1"
+        "@types/node": "^25.9.1",
+        "vitest": "^4.1.7"
     },
     "publishConfig": {
         "access": "public",
