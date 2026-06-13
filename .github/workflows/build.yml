@@ -52,12 +52,6 @@ jobs:
               id: solo
               with:
                   installMirrorNode: true
-                  hieroVersion: v0.66.0
-                  mirrorNodeVersion: v0.138.0
-                  mirrorNodePortRest: 38081
-                  mirrorNodePortGrpc: 5600
-                  mirrorNodePortWeb3Rest: 8545
-                  soloVersion: 0.46.1
 
             - name: Wait for Mirror Node
               run: |
