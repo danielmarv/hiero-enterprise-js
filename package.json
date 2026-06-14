@@ -12,7 +12,8 @@
         "test:integration": "pnpm -r run test:integration",
         "test:watch": "pnpm -r run test:watch",
         "lint": "eslint . --fix",
-        "format": "prettier --write ."
+        "format": "prettier --write .",
+        "example": "pnpm --filter @hiero-enterprise/examples examples"
     },
     "devDependencies": {
         "@eslint/js": "^10.0.1",
