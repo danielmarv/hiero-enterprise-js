@@ -229,7 +229,7 @@ describe("TransferOperation (via AccountService)", () => {
         it("rejects non-integer amount", async () => {
             await expect(
                 service.transferToken("0.0.456", "0.0.200", 1.5, "0.0.100"),
-            ).rejects.toThrow(/amount must be a finite integer/);
+            ).rejects.toThrow(/amount must be a safe integer/);
         });
 
         it("rejects when sender equals receiver", async () => {
@@ -324,7 +324,7 @@ describe("TransferOperation (via AccountService)", () => {
         it("rejects when serial is fractional", async () => {
             await expect(
                 service.transferNft("0.0.789", 1.5, "0.0.200", "0.0.100"),
-            ).rejects.toThrow(/serial must be a finite integer/);
+            ).rejects.toThrow(/serial must be a safe integer/);
         });
 
         it("rejects when sender equals receiver", async () => {
