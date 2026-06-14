@@ -32,6 +32,7 @@ export interface MirrorNftRecord {
     spender?: string | null;
     token_id?: string;
     serial_number?: number;
+    account_id?: string;
 }
 
 async function getJson<T>(url: string): Promise<T> {

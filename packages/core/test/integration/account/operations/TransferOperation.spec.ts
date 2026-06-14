@@ -1,0 +1,241 @@
+import { describe, it, expect, beforeAll } from "vitest";
+import { PrivateKey } from "@hiero-ledger/sdk";
+import { setupIntegrationTestEnv } from "../../../utils/env.js";
+import { waitForMirrorNodeRecord } from "../../../utils/mirror-node.js";
+import { queryNftRecord } from "../../../utils/mirror-node-rest.js";
+import {
+    createTestAccount,
+    createOwnerSpenderPair,
+} from "../../../utils/integration-fixtures.js";
+import {
+    AccountService,
+    FungibleTokenService,
+    NftService,
+} from "../../../../src/services/index.js";
+
+describe("TransferOperation [Integration]", () => {
+    let client: AccountService;
+    let tokenService: FungibleTokenService;
+    let nftService: NftService;
+    let operatorAccountId: string;
+    let operatorKey: PrivateKey;
+
+    beforeAll(() => {
+        const ctx = setupIntegrationTestEnv();
+        client = new AccountService(ctx);
+        tokenService = new FungibleTokenService(ctx);
+        nftService = new NftService(ctx);
+        operatorAccountId = ctx.operatorAccountId.toString();
+        // Operator key — needed when the operator acts as treasury/supply key
+        const rawKey = process.env.HIERO_OPERATOR_KEY;
+        if (!rawKey) {
+            throw new Error(
+                "HIERO_OPERATOR_KEY is not set (required for transfer integration tests).",
+            );
+        }
+        operatorKey = PrivateKey.fromStringED25519(rawKey);
+    });
+
+    // HBAR transfers
+    describe("transferHbar", () => {
+        it("transfers HBAR from the operator to a recipient", async () => {
+            const receiver = await createTestAccount(client, 0);
+
+            const before = await client.getAccountBalance(receiver.accountId);
+            const beforeTinybars = BigInt(before.hbars);
+
+            await client.transferHbar(receiver.accountId, 1, operatorAccountId);
+
+            const after = await client.getAccountBalance(receiver.accountId);
+            const afterTinybars = BigInt(after.hbars);
+
+            // Receiver pays no fees — balance increases by exactly the transfer
+            expect(afterTinybars - beforeTinybars).toBe(100_000_000n);
+        });
+
+        it("transfers HBAR from a non-operator sender (requires additionalSigners)", async () => {
+            const sender = await createTestAccount(client, 5);
+            const receiver = await createTestAccount(client, 0);
+
+            const before = await client.getAccountBalance(receiver.accountId);
+            const beforeTinybars = BigInt(before.hbars);
+
+            await client.transferHbar(receiver.accountId, 1, sender.accountId, {
+                additionalSigners: [sender.key],
+            });
+
+            const after = await client.getAccountBalance(receiver.accountId);
+            const afterTinybars = BigInt(after.hbars);
+
+            expect(afterTinybars - beforeTinybars).toBe(100_000_000n);
+        });
+
+        it("rejects a self-transfer before submitting to the network", async () => {
+            await expect(
+                client.transferHbar(operatorAccountId, 1, operatorAccountId),
+            ).rejects.toThrow(/must be different/);
+        });
+    });
+
+    // Fungible token transfers
+    describe("transferToken", () => {
+        it("transfers fungible tokens from the operator to a recipient", async () => {
+            const tokenId = await tokenService.createToken({
+                name: "Transfer Test Token",
+                symbol: "TTT",
+                decimals: 2,
+                initialSupply: 10_000,
+                treasuryAccountId: operatorAccountId,
+                treasuryKey: operatorKey,
+                supplyKey: operatorKey,
+            });
+
+            const receiver = await createTestAccount(client, 1);
+            await tokenService.associateToken(
+                tokenId,
+                receiver.accountId,
+                receiver.key,
+            );
+
+            await client.transferToken(
+                tokenId,
+                receiver.accountId,
+                250,
+                operatorAccountId,
+            );
+
+            const balance = await client.getAccountBalance(receiver.accountId);
+            const tokenBalance = balance.tokens.find(
+                (t) => t.tokenId === tokenId,
+            );
+            expect(tokenBalance).toBeDefined();
+            expect(tokenBalance!.balance).toBe("250");
+        });
+
+        it("transfers tokens with matching expectedDecimals", async () => {
+            const tokenId = await tokenService.createToken({
+                name: "Decimals Test Token",
+                symbol: "DEC",
+                decimals: 4,
+                initialSupply: 1_000_000,
+                treasuryAccountId: operatorAccountId,
+                treasuryKey: operatorKey,
+                supplyKey: operatorKey,
+            });
+
+            const receiver = await createTestAccount(client, 1);
+            await tokenService.associateToken(
+                tokenId,
+                receiver.accountId,
+                receiver.key,
+            );
+
+            await client.transferToken(
+                tokenId,
+                receiver.accountId,
+                100,
+                operatorAccountId,
+                { expectedDecimals: 4 },
+            );
+
+            const balance = await client.getAccountBalance(receiver.accountId);
+            const tokenBalance = balance.tokens.find(
+                (t) => t.tokenId === tokenId,
+            );
+            expect(tokenBalance!.balance).toBe("100");
+        });
+
+        it("transfers tokens between two non-operator accounts", async () => {
+            const { owner, spender } = await createOwnerSpenderPair(client);
+
+            const tokenId = await tokenService.createToken({
+                name: "Peer Transfer Token",
+                symbol: "PEER",
+                decimals: 0,
+                initialSupply: 500,
+                treasuryAccountId: owner.accountId,
+                treasuryKey: owner.key,
+                supplyKey: owner.key,
+            });
+
+            await tokenService.associateToken(
+                tokenId,
+                spender.accountId,
+                spender.key,
+            );
+
+            await client.transferToken(
+                tokenId,
+                spender.accountId,
+                100,
+                owner.accountId,
+                { additionalSigners: [owner.key] },
+            );
+
+            const balance = await client.getAccountBalance(spender.accountId);
+            const tokenBalance = balance.tokens.find(
+                (t) => t.tokenId === tokenId,
+            );
+            expect(tokenBalance!.balance).toBe("100");
+        });
+    });
+
+    // ----------------------------------------------------------------
+    // NFT transfers
+    // ----------------------------------------------------------------
+
+    describe("transferNft", () => {
+        it("transfers an NFT from the operator to a recipient", async () => {
+            const tokenId = await nftService.createNftType({
+                name: "Transfer Test NFT",
+                symbol: "TNFT",
+                treasuryAccountId: operatorAccountId,
+                treasuryKey: operatorKey,
+                supplyKey: operatorKey,
+            });
+
+            const serials = await nftService.mintNfts(
+                tokenId,
+                [Buffer.from("meta-1")],
+                operatorKey,
+            );
+            const serial = serials[0];
+
+            const receiver = await createTestAccount(client, 1);
+            await tokenService.associateToken(
+                tokenId,
+                receiver.accountId,
+                receiver.key,
+            );
+
+            await client.transferNft(
+                tokenId,
+                serial,
+                receiver.accountId,
+                operatorAccountId,
+            );
+
+            await waitForMirrorNodeRecord();
+
+            const nft = await queryNftRecord(tokenId, serial);
+            expect(nft.account_id).toBe(receiver.accountId);
+        });
+    });
+
+    // Scheduled transfers
+    describe("scheduleTransferHbar", () => {
+        it("returns a scheduleId and transactionId for a scheduled HBAR transfer", async () => {
+            const receiver = await createTestAccount(client, 0);
+
+            const result = await client.scheduleTransferHbar(
+                receiver.accountId,
+                1,
+                operatorAccountId,
+                { scheduleMemo: "integration test schedule" },
+            );
+
+            expect(result.scheduleId).toMatch(/^0\.0\.\d+$/);
+            expect(result.transactionId).toContain("@");
+        });
+    });
+});
