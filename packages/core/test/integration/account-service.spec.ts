@@ -7,7 +7,7 @@ import {
     NftService,
 } from "../../src/services/index.js";
 import { AccountType } from "../../src/types/index.js";
-import { PrivateKey } from "@hiero-ledger/sdk";
+import { PrivateKey, Status } from "@hiero-ledger/sdk";
 
 const MIRROR_URL = process.env.HIERO_MIRROR_NODE_URL;
 
@@ -21,9 +21,13 @@ interface MirrorAllowance {
 async function queryHbarAllowances(
     ownerAccountId: string,
 ): Promise<MirrorAllowance[]> {
-    const res = await fetch(
-        `${MIRROR_URL}/api/v1/accounts/${ownerAccountId}/allowances/crypto`,
-    );
+    const url = `${MIRROR_URL}/api/v1/accounts/${ownerAccountId}/allowances/crypto`;
+    const res = await fetch(url);
+    if (!res.ok) {
+        throw new Error(
+            `Mirror Node GET ${url} failed with status ${res.status}: ${await res.text()}`,
+        );
+    }
     const data = (await res.json()) as { allowances?: MirrorAllowance[] };
     return data.allowances ?? [];
 }
@@ -31,9 +35,13 @@ async function queryHbarAllowances(
 async function queryTokenAllowances(
     ownerAccountId: string,
 ): Promise<MirrorAllowance[]> {
-    const res = await fetch(
-        `${MIRROR_URL}/api/v1/accounts/${ownerAccountId}/allowances/tokens`,
-    );
+    const url = `${MIRROR_URL}/api/v1/accounts/${ownerAccountId}/allowances/tokens`;
+    const res = await fetch(url);
+    if (!res.ok) {
+        throw new Error(
+            `Mirror Node GET ${url} failed with status ${res.status}: ${await res.text()}`,
+        );
+    }
     const data = (await res.json()) as { allowances?: MirrorAllowance[] };
     return data.allowances ?? [];
 }
@@ -125,7 +133,7 @@ describe("AccountService [Integration]", () => {
             initialBalance: 1,
         });
 
-        await client.approveHbarAllowance({
+        const approveReceipt = await client.approveHbarAllowance({
             hbarAllowances: [
                 {
                     ownerAccountId: owner.accountId,
@@ -135,6 +143,7 @@ describe("AccountService [Integration]", () => {
             ],
             additionalSigners: [ownerKey],
         });
+        expect(approveReceipt.status).toBe(Status.Success);
 
         await waitForMirrorNodeRecord();
 
@@ -169,7 +178,7 @@ describe("AccountService [Integration]", () => {
             supplyKey: ownerKey,
         });
 
-        await client.approveTokenAllowance({
+        const approveReceipt = await client.approveTokenAllowance({
             tokenAllowances: [
                 {
                     tokenId,
@@ -180,6 +189,7 @@ describe("AccountService [Integration]", () => {
             ],
             additionalSigners: [ownerKey],
         });
+        expect(approveReceipt.status).toBe(Status.Success);
 
         await waitForMirrorNodeRecord();
 
@@ -220,7 +230,7 @@ describe("AccountService [Integration]", () => {
             ownerKey,
         );
 
-        await client.approveNftAllowance({
+        const approveReceipt = await client.approveNftAllowance({
             nftAllowances: [
                 {
                     tokenId,
@@ -231,6 +241,7 @@ describe("AccountService [Integration]", () => {
             ],
             additionalSigners: [ownerKey],
         });
+        expect(approveReceipt.status).toBe(Status.Success);
 
         await waitForMirrorNodeRecord();
 
@@ -247,4 +258,268 @@ describe("AccountService [Integration]", () => {
             expect(nft.spender).toBe(spender.accountId);
         }
     }, 30000);
+
+    it("deletes an HBAR allowance by setting amount to 0", async () => {
+        const ownerKey = PrivateKey.generateED25519();
+        const owner = await client.createAccount({
+            publicKey: ownerKey.publicKey.toString(),
+            keyType: AccountType.ED25519,
+            initialBalance: 10,
+        });
+
+        const spenderKey = PrivateKey.generateED25519();
+        const spender = await client.createAccount({
+            publicKey: spenderKey.publicKey.toString(),
+            keyType: AccountType.ED25519,
+            initialBalance: 1,
+        });
+
+        // First grant the allowance so there's something to revoke
+        const approveReceipt = await client.approveHbarAllowance({
+            hbarAllowances: [
+                {
+                    ownerAccountId: owner.accountId,
+                    spenderAccountId: spender.accountId,
+                    amount: 5,
+                },
+            ],
+            additionalSigners: [ownerKey],
+        });
+        expect(approveReceipt.status).toBe(Status.Success);
+        await waitForMirrorNodeRecord();
+
+        const granted = await queryHbarAllowances(owner.accountId);
+        expect(
+            granted.find((a) => a.spender === spender.accountId),
+        ).toBeDefined();
+
+        // Now revoke it
+        const deleteReceipt = await client.deleteHbarAllowance(
+            [
+                {
+                    ownerAccountId: owner.accountId,
+                    spenderAccountId: spender.accountId,
+                },
+            ],
+            { additionalSigners: [ownerKey] },
+        );
+        expect(deleteReceipt.status).toBe(Status.Success);
+        await waitForMirrorNodeRecord();
+
+        const after = await queryHbarAllowances(owner.accountId);
+        const match = after.find((a) => a.spender === spender.accountId);
+        // Mirror node either removes the entry or reports amount=0 after revocation
+        expect(match === undefined || match.amount === 0).toBe(true);
+    }, 45000);
+
+    it("deletes a fungible token allowance by setting amount to 0", async () => {
+        const ownerKey = PrivateKey.generateED25519();
+        const owner = await client.createAccount({
+            publicKey: ownerKey.publicKey.toString(),
+            keyType: AccountType.ED25519,
+            initialBalance: 10,
+        });
+
+        const spenderKey = PrivateKey.generateED25519();
+        const spender = await client.createAccount({
+            publicKey: spenderKey.publicKey.toString(),
+            keyType: AccountType.ED25519,
+            initialBalance: 1,
+        });
+
+        const tokenId = await tokenService.createToken({
+            name: "Delete Allowance Token",
+            symbol: "DAT",
+            decimals: 2,
+            initialSupply: 10000,
+            treasuryAccountId: owner.accountId,
+            treasuryKey: ownerKey,
+            supplyKey: ownerKey,
+        });
+
+        const approveReceipt = await client.approveTokenAllowance({
+            tokenAllowances: [
+                {
+                    tokenId,
+                    ownerAccountId: owner.accountId,
+                    spenderAccountId: spender.accountId,
+                    amount: 500,
+                },
+            ],
+            additionalSigners: [ownerKey],
+        });
+        expect(approveReceipt.status).toBe(Status.Success);
+        await waitForMirrorNodeRecord();
+
+        const granted = await queryTokenAllowances(owner.accountId);
+        expect(
+            granted.find(
+                (a) =>
+                    a.spender === spender.accountId && a.token_id === tokenId,
+            ),
+        ).toBeDefined();
+
+        // Revoke it
+        const deleteReceipt = await client.deleteTokenAllowance(
+            [
+                {
+                    tokenId,
+                    ownerAccountId: owner.accountId,
+                    spenderAccountId: spender.accountId,
+                },
+            ],
+            { additionalSigners: [ownerKey] },
+        );
+        expect(deleteReceipt.status).toBe(Status.Success);
+        await waitForMirrorNodeRecord();
+
+        const after = await queryTokenAllowances(owner.accountId);
+        const match = after.find(
+            (a) => a.spender === spender.accountId && a.token_id === tokenId,
+        );
+        expect(match === undefined || match.amount === 0).toBe(true);
+    }, 45000);
+
+    it("deletes an NFT allowance for specific serials", async () => {
+        const ownerKey = PrivateKey.generateED25519();
+        const owner = await client.createAccount({
+            publicKey: ownerKey.publicKey.toString(),
+            keyType: AccountType.ED25519,
+            initialBalance: 10,
+        });
+
+        const spenderKey = PrivateKey.generateED25519();
+        const spender = await client.createAccount({
+            publicKey: spenderKey.publicKey.toString(),
+            keyType: AccountType.ED25519,
+            initialBalance: 1,
+        });
+
+        const tokenId = await nftService.createNftType({
+            name: "Delete NFT Allowance",
+            symbol: "DNAL",
+            treasuryAccountId: owner.accountId,
+            treasuryKey: ownerKey,
+            supplyKey: ownerKey,
+        });
+
+        await nftService.mintNfts(
+            tokenId,
+            [Buffer.from("meta-1"), Buffer.from("meta-2")],
+            ownerKey,
+        );
+
+        // Grant per-serial allowance
+        const approveReceipt = await client.approveNftAllowance({
+            nftAllowances: [
+                {
+                    tokenId,
+                    ownerAccountId: owner.accountId,
+                    spenderAccountId: spender.accountId,
+                    serialNumbers: [1, 2],
+                },
+            ],
+            additionalSigners: [ownerKey],
+        });
+        expect(approveReceipt.status).toBe(Status.Success);
+        await waitForMirrorNodeRecord();
+
+        // Verify spender was set on both serials
+        for (const serial of [1, 2]) {
+            const url = `${MIRROR_URL}/api/v1/tokens/${tokenId}/nfts/${serial}`;
+            const res = await fetch(url);
+            if (!res.ok) {
+                throw new Error(
+                    `Mirror Node GET ${url} failed with status ${res.status}: ${await res.text()}`,
+                );
+            }
+            const nft = (await res.json()) as { spender?: string | null };
+            expect(nft.spender).toBe(spender.accountId);
+        }
+
+        // Revoke per-serial allowance
+        const deleteReceipt = await client.deleteNftAllowance(
+            [
+                {
+                    tokenId,
+                    ownerAccountId: owner.accountId,
+                    serialNumbers: [1, 2],
+                },
+            ],
+            { additionalSigners: [ownerKey] },
+        );
+        expect(deleteReceipt.status).toBe(Status.Success);
+        await waitForMirrorNodeRecord();
+
+        // Verify spender was cleared on both serials
+        for (const serial of [1, 2]) {
+            const url = `${MIRROR_URL}/api/v1/tokens/${tokenId}/nfts/${serial}`;
+            const res = await fetch(url);
+            if (!res.ok) {
+                throw new Error(
+                    `Mirror Node GET ${url} failed with status ${res.status}: ${await res.text()}`,
+                );
+            }
+            const nft = (await res.json()) as { spender?: string | null };
+            expect(res.ok).toBe(true);
+            expect(nft.spender == null).toBe(true);
+        }
+    }, 60000);
+
+    it("deletes an approve-for-all-serials NFT allowance", async () => {
+        const ownerKey = PrivateKey.generateED25519();
+        const owner = await client.createAccount({
+            publicKey: ownerKey.publicKey.toString(),
+            keyType: AccountType.ED25519,
+            initialBalance: 10,
+        });
+
+        const spenderKey = PrivateKey.generateED25519();
+        const spender = await client.createAccount({
+            publicKey: spenderKey.publicKey.toString(),
+            keyType: AccountType.ED25519,
+            initialBalance: 1,
+        });
+
+        const tokenId = await nftService.createNftType({
+            name: "Delete All NFT Allowance",
+            symbol: "DANAL",
+            treasuryAccountId: owner.accountId,
+            treasuryKey: ownerKey,
+            supplyKey: ownerKey,
+        });
+
+        await nftService.mintNfts(tokenId, [Buffer.from("meta-1")], ownerKey);
+
+        // Grant approve-for-all-serials. We verify success via the returned
+        // receipt's status field rather than via a mirror-node lookup because
+        // the Solo (local) Mirror Node does not populate the
+        // `/api/v1/accounts/{id}/allowances/nfts` derived view.
+        const approveReceipt = await client.approveNftAllowance({
+            nftAllowances: [
+                {
+                    tokenId,
+                    ownerAccountId: owner.accountId,
+                    spenderAccountId: spender.accountId,
+                    allSerials: true,
+                },
+            ],
+            additionalSigners: [ownerKey],
+        });
+        expect(approveReceipt.status).toBe(Status.Success);
+
+        // Revoke approve-for-all-serials. Same verification strategy — the
+        // receipt status is the source of truth for this assertion.
+        const deleteReceipt = await client.deleteAllNftAllowances(
+            [
+                {
+                    tokenId,
+                    ownerAccountId: owner.accountId,
+                    spenderAccountId: spender.accountId,
+                },
+            ],
+            { additionalSigners: [ownerKey] },
+        );
+        expect(deleteReceipt.status).toBe(Status.Success);
+    }, 45000);
 });

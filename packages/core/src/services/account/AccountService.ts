@@ -8,6 +8,8 @@ import {
     DeleteAccountOperation,
     UpdateAccountOperation,
     ApproveAllowanceOperation,
+    DeleteAllowanceOperation,
+    DeleteAllNftAllowancesOperation,
 } from "./operations/index.js";
 import type {
     CreateAccountOptions,
@@ -18,9 +20,19 @@ import type {
     ApproveHbarAllowanceOptions,
     ApproveTokenAllowanceOptions,
     ApproveNftAllowanceOptions,
+    DeleteAllowanceOptions,
+    DeleteAllNftAllowancesOptions,
+    NftAllowanceDeletion,
+    NftAllSerialsAllowanceDeletion,
+    HbarAllowanceDeletion,
+    TokenAllowanceDeletion,
 } from "./operations/index.js";
 import { AccountBalanceQuery } from "./queries/index.js";
-import type { ScheduleOptions, ScheduledResult } from "../transaction/index.js";
+import type {
+    ScheduleOptions,
+    ScheduledResult,
+    TransactionOptions,
+} from "../transaction/index.js";
 
 /**
  * Service for managing accounts on the Hiero network.
@@ -32,6 +44,8 @@ export class AccountService {
     private readonly deleteOperation: DeleteAccountOperation;
     private readonly updateOperation: UpdateAccountOperation;
     private readonly approveAllowanceOperation: ApproveAllowanceOperation;
+    private readonly deleteAllowanceOperation: DeleteAllowanceOperation;
+    private readonly deleteAllNftAllowancesOperation: DeleteAllNftAllowancesOperation;
     private readonly balanceQuery: AccountBalanceQuery;
 
     constructor(private readonly context: IHieroContext) {
@@ -40,6 +54,9 @@ export class AccountService {
         this.deleteOperation = new DeleteAccountOperation(context);
         this.updateOperation = new UpdateAccountOperation(context);
         this.approveAllowanceOperation = new ApproveAllowanceOperation(context);
+        this.deleteAllowanceOperation = new DeleteAllowanceOperation(context);
+        this.deleteAllNftAllowancesOperation =
+            new DeleteAllNftAllowancesOperation(context);
         this.balanceQuery = new AccountBalanceQuery(context);
     }
 
@@ -288,6 +305,143 @@ export class AccountService {
         return await this.approveAllowanceOperation.execute(
             options,
             "approveNftAllowance",
+        );
+    }
+
+    /**
+     * Delete NFT allowances — revoke a spender's approval for specific NFT
+     * serial numbers previously granted by the owner.
+     *
+     * The owner's key must sign the transaction. If the operator is not the
+     * owner, pass the owner's key via `options.additionalSigners`.
+     *
+     * Note: Only per-serial NFT allowance deletion is supported by the protocol.
+     * To remove HBAR or fungible token allowances, call `approveHbarAllowance`
+     * / `approveTokenAllowance` with `amount: 0`. To revoke an
+     * "approve-for-all-serials" grant, use `deleteAllNftAllowances`.
+     *
+     * @param allowances - NFT allowance deletions to apply (at least one)
+     * @param options - Optional base transaction options (signers, memo, etc.)
+     */
+    async deleteNftAllowance(
+        allowances: NftAllowanceDeletion[],
+        options: DeleteAllowanceOptions = {},
+    ): Promise<TransactionReceipt> {
+        if (!allowances?.length) {
+            throw normalizeError(
+                new Error(
+                    "nftAllowances must be provided with at least one entry.",
+                ),
+                "AccountService.deleteNftAllowance",
+            );
+        }
+        return await this.deleteAllowanceOperation.execute(
+            allowances,
+            options,
+            "deleteNftAllowance",
+        );
+    }
+
+    /**
+     * Delete "approve-for-all-serials" NFT allowances — revoke a spender's
+     * blanket approval to transfer any NFT in the collection on the owner's
+     * behalf. Use this to undo a previous `approveNftAllowance`
+     *
+     * For revoking specific serial numbers, use `deleteNftAllowance` instead.
+     *
+     * The owner's key must sign the transaction. If the operator is not the
+     * owner, pass the owner's key via `options.additionalSigners`.
+     *
+     * @param allowances - Approve-for-all-serials deletions to apply (at least one)
+     * @param options - Optional base transaction options (signers, memo, etc.)
+     */
+    async deleteAllNftAllowances(
+        allowances: NftAllSerialsAllowanceDeletion[],
+        options: DeleteAllNftAllowancesOptions = {},
+    ): Promise<TransactionReceipt> {
+        if (!allowances?.length) {
+            throw normalizeError(
+                new Error(
+                    "nftAllowances must be provided with at least one entry.",
+                ),
+                "AccountService.deleteAllNftAllowances",
+            );
+        }
+        return await this.deleteAllNftAllowancesOperation.execute(
+            allowances,
+            options,
+            "deleteAllNftAllowances",
+        );
+    }
+
+    /**
+     * Delete HBAR allowances — revoke a spender's previously granted permission
+     * to spend HBAR on the owner's behalf.
+     *
+     * The owner's key must sign the transaction. If the operator is not the
+     * owner, pass the owner's key via `options.additionalSigners`.
+     *
+     * @param allowances - HBAR allowance deletions to apply (at least one)
+     * @param options - Optional base transaction options (signers, memo, etc.)
+     */
+    async deleteHbarAllowance(
+        allowances: HbarAllowanceDeletion[],
+        options: TransactionOptions = {},
+    ): Promise<TransactionReceipt> {
+        if (!allowances?.length) {
+            throw normalizeError(
+                new Error(
+                    "hbarAllowances must be provided with at least one entry.",
+                ),
+                "AccountService.deleteHbarAllowance",
+            );
+        }
+        return await this.approveAllowanceOperation.execute(
+            {
+                ...options,
+                hbarAllowances: allowances.map((a) => ({
+                    ownerAccountId: a.ownerAccountId,
+                    spenderAccountId: a.spenderAccountId,
+                    amount: 0,
+                })),
+            },
+            "deleteHbarAllowance",
+        );
+    }
+
+    /**
+     * Delete fungible token allowances — revoke a spender's previously granted
+     * permission to transfer tokens on the owner's behalf.
+     *
+     * The owner's key must sign the transaction. If the operator is not the
+     * owner, pass the owner's key via `options.additionalSigners`.
+     *
+     * @param allowances - Fungible token allowance deletions to apply (at least one)
+     * @param options - Optional base transaction options (signers, memo, etc.)
+     */
+    async deleteTokenAllowance(
+        allowances: TokenAllowanceDeletion[],
+        options: TransactionOptions = {},
+    ): Promise<TransactionReceipt> {
+        if (!allowances?.length) {
+            throw normalizeError(
+                new Error(
+                    "tokenAllowances must be provided with at least one entry.",
+                ),
+                "AccountService.deleteTokenAllowance",
+            );
+        }
+        return await this.approveAllowanceOperation.execute(
+            {
+                ...options,
+                tokenAllowances: allowances.map((a) => ({
+                    tokenId: a.tokenId,
+                    ownerAccountId: a.ownerAccountId,
+                    spenderAccountId: a.spenderAccountId,
+                    amount: 0,
+                })),
+            },
+            "deleteTokenAllowance",
         );
     }
 }
