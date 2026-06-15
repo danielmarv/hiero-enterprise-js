@@ -1,0 +1,213 @@
+import { TokenType, TokenSupplyType, type Key } from "@hiero-ledger/sdk";
+import type { IHieroContext } from "../../context/index.js";
+import type { ScheduleOptions, ScheduledResult } from "../transaction/index.js";
+import { TokenCreateOperation } from "./operations/index.js";
+import type { TokenCreateOperationOptions } from "./operations/index.js";
+
+/**
+ * Options for creating a fungible token.
+ *
+ * Omits `tokenType` because the service always sets it to
+ * `TokenType.FungibleCommon`. All other fields mirror `TokenCreateTransaction`.
+ *
+ * When `maxSupply` is provided and `supplyType` is not, the service
+ * automatically sets `supplyType` to `TokenSupplyType.Finite`.
+ */
+export type CreateFungibleTokenOptions = Omit<
+    TokenCreateOperationOptions,
+    "tokenType"
+>;
+
+/**
+ * Options for creating a non-fungible token (NFT collection).
+ *
+ * Omits fields the service controls:
+ * - `tokenType` — always `TokenType.NonFungibleUnique`
+ * - `decimals` — always `0`
+ * - `initialSupply` — always `0` (NFTs are minted post-creation via the supply key)
+ *
+ * `supplyKey` is required because individual NFTs are minted after the
+ * collection is created.
+ *
+ * When `maxSupply` is provided and `supplyType` is not, the service
+ * automatically sets `supplyType` to `TokenSupplyType.Finite`.
+ */
+export type CreateNftOptions = Omit<
+    TokenCreateOperationOptions,
+    "tokenType" | "decimals" | "initialSupply" | "supplyKey"
+> & {
+    supplyKey: Key;
+};
+
+/**
+ * Service for managing native tokens on the Hiero network (HTS) — covers
+ * both fungible tokens and non-fungible token (NFT) collections via a
+ * single unified surface.
+ */
+export class TokenService {
+    private readonly createOperation: TokenCreateOperation;
+
+    constructor(private readonly context: IHieroContext) {
+        this.createOperation = new TokenCreateOperation(context);
+    }
+
+    /**
+     * Create a new fungible token.
+     *
+     * @param options.tokenName - Token name (max 100 bytes)
+     * @param options.tokenSymbol - Token symbol (max 100 bytes)
+     * @param options.decimals - Decimal places (default: 0)
+     * @param options.initialSupply - Initial supply (default: 0, in smallest units)
+     * @param options.treasuryAccountId - Account that receives initial supply and serves as treasury
+     * @param options.adminKey - Admin key required to update / delete the token
+     * @param options.supplyKey - Required to mint / burn after creation
+     * @param options.kycKey - Required to grant / revoke KYC on accounts holding the token
+     * @param options.freezeKey - Required to freeze / unfreeze accounts holding the token
+     * @param options.pauseKey - Required to pause / unpause the entire token
+     * @param options.wipeKey - Required to wipe token balances from accounts
+     * @param options.feeScheduleKey - Required to update custom fees
+     * @param options.metadataKey - Required to update token metadata
+     * @param options.maxSupply - Maximum token supply (auto-sets `supplyType` to Finite)
+     * @param options.supplyType - Explicit supply type override (`Infinite` or `Finite`)
+     * @param options.customFees - Custom fee schedule
+     * @param options.tokenMemo - Token memo (max 100 bytes)
+     * @param options.metadata - Arbitrary token metadata bytes
+     * @returns The token ID of the created token (e.g., `"0.0.12345"`)
+     *
+     * @example
+     * ```typescript
+     * const tokenId = await tokenService.createFungibleToken({
+     *   tokenName: "Acme Coin",
+     *   tokenSymbol: "ACME",
+     *   decimals: 2,
+     *   initialSupply: 1_000_000,
+     *   treasuryAccountId: "0.0.555",
+     *   adminKey: adminKey.publicKey,
+     *   supplyKey: supplyKey.publicKey,
+     *   additionalSigners: [treasuryKey],
+     * });
+     * ```
+     */
+    async createFungibleToken(
+        options: CreateFungibleTokenOptions,
+    ): Promise<string> {
+        return await this.createOperation.execute(
+            this.buildFungibleOperationOptions(options),
+        );
+    }
+
+    /**
+     * Schedule fungible token creation for deferred multi-sig execution.
+     * Returns a `scheduleId` — other parties can then sign using
+     * `ScheduleService` before the transaction executes.
+     */
+    async scheduleCreateFungibleToken(
+        options: CreateFungibleTokenOptions,
+        scheduleOptions?: ScheduleOptions,
+    ): Promise<ScheduledResult> {
+        return await this.createOperation.schedule(
+            this.buildFungibleOperationOptions(options),
+            scheduleOptions,
+        );
+    }
+
+    /**
+     * Create a new non-fungible token (NFT) collection.
+     *
+     * `decimals` and `initialSupply` are forced to `0` and `tokenType` is set
+     * to `NonFungibleUnique`. Mint individual NFTs after creation using the
+     * supply key (a future `mintNft` operation).
+     *
+     * @param options.tokenName - Collection name (max 100 bytes)
+     * @param options.tokenSymbol - Collection symbol (max 100 bytes)
+     * @param options.treasuryAccountId - Account that owns newly minted NFTs by default
+     * @param options.supplyKey - Required, used to mint NFTs after creation
+     * @param options.adminKey - Admin key required to update / delete the collection
+     * @param options.kycKey - Required to grant / revoke KYC on holders
+     * @param options.freezeKey - Required to freeze / unfreeze holders
+     * @param options.pauseKey - Required to pause / unpause the collection
+     * @param options.wipeKey - Required to wipe NFTs from holders
+     * @param options.feeScheduleKey - Required to update custom fees
+     * @param options.metadataKey - Required to update collection metadata
+     * @param options.maxSupply - Maximum number of NFTs (auto-sets `supplyType` to Finite)
+     * @param options.supplyType - Explicit supply type override (`Infinite` or `Finite`)
+     * @param options.customFees - Custom fee schedule
+     * @param options.tokenMemo - Collection memo (max 100 bytes)
+     * @param options.metadata - Arbitrary collection metadata bytes
+     * @returns The token ID of the created NFT collection
+     *
+     * @example
+     * ```typescript
+     * const collectionId = await tokenService.createNft({
+     *   tokenName: "Acme Art",
+     *   tokenSymbol: "ART",
+     *   treasuryAccountId: "0.0.555",
+     *   supplyKey: supplyKey.publicKey,
+     *   maxSupply: 10_000,
+     *   additionalSigners: [treasuryKey],
+     * });
+     * ```
+     */
+    async createNft(options: CreateNftOptions): Promise<string> {
+        return await this.createOperation.execute(
+            this.buildNftOperationOptions(options),
+        );
+    }
+
+    /**
+     * Schedule NFT collection creation for deferred multi-sig execution.
+     * Returns a `scheduleId` — other parties can then sign using
+     * `ScheduleService` before the transaction executes.
+     */
+    async scheduleCreateNft(
+        options: CreateNftOptions,
+        scheduleOptions?: ScheduleOptions,
+    ): Promise<ScheduledResult> {
+        return await this.createOperation.schedule(
+            this.buildNftOperationOptions(options),
+            scheduleOptions,
+        );
+    }
+
+    private buildFungibleOperationOptions(
+        options: CreateFungibleTokenOptions,
+    ): TokenCreateOperationOptions {
+        return {
+            ...options,
+            tokenType: TokenType.FungibleCommon,
+            supplyType: this.resolveSupplyType(
+                options.maxSupply,
+                options.supplyType,
+            ),
+        };
+    }
+
+    private buildNftOperationOptions(
+        options: CreateNftOptions,
+    ): TokenCreateOperationOptions {
+        return {
+            ...options,
+            tokenType: TokenType.NonFungibleUnique,
+            decimals: 0,
+            initialSupply: 0,
+            supplyType: this.resolveSupplyType(
+                options.maxSupply,
+                options.supplyType,
+            ),
+        };
+    }
+
+    /**
+     * Default `supplyType` to `Finite` when `maxSupply` is provided but
+     * the caller didn't explicitly choose a supply type. Preserves any
+     * explicit caller choice.
+     */
+    private resolveSupplyType(
+        maxSupply: TokenCreateOperationOptions["maxSupply"],
+        supplyType: TokenCreateOperationOptions["supplyType"],
+    ): TokenSupplyType | undefined {
+        if (supplyType != null) return supplyType;
+        if (maxSupply != null) return TokenSupplyType.Finite;
+        return undefined;
+    }
+}
