@@ -52,6 +52,7 @@ jobs:
               id: solo
               with:
                   installMirrorNode: true
+                  nodeVersion: ${{ matrix.node-version }}
 
             - name: Wait for Mirror Node
               run: |
