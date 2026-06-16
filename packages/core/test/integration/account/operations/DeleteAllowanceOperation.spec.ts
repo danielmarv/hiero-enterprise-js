@@ -73,7 +73,8 @@ describe("AccountService delete-allowance operations [Integration]", () => {
             decimals: 2,
             initialSupply: 10000,
             treasuryAccountId: owner.accountId,
-            supplyKey: owner.key,
+            supplyKey: owner.key.publicKey,
+            additionalSigners: [owner.key],
         });
 
         const approveReceipt = await client.approveTokenAllowance({
@@ -126,14 +127,15 @@ describe("AccountService delete-allowance operations [Integration]", () => {
             tokenName: "Delete NFT Allowance",
             tokenSymbol: "DNAL",
             treasuryAccountId: owner.accountId,
-            supplyKey: owner.key,
+            supplyKey: owner.key.publicKey,
+            additionalSigners: [owner.key],
         });
 
-        await tokenService.mintNfts(
+        await tokenService.mintToken({
             tokenId,
-            [Buffer.from("meta-1"), Buffer.from("meta-2")],
-            owner.key,
-        );
+            metadata: [Buffer.from("meta-1"), Buffer.from("meta-2")],
+            additionalSigners: [owner.key],
+        });
 
         // Grant per-serial allowance
         const approveReceipt = await client.approveNftAllowance({

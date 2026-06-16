@@ -110,20 +110,24 @@ async function transferToken(
 
     // Sender creates the token and holds the full initial supply as treasury.
 
-    const tokenId = await tokenService.createToken({
-        name: "Transfer Demo Token",
-        symbol: "TXD",
+    const tokenId = await tokenService.createFungibleToken({
+        tokenName: "Transfer Demo Token",
+        tokenSymbol: "TXD",
         decimals: 2,
         initialSupply: 10_000,
         treasuryAccountId: sender.accountId,
-        treasuryKey: senderKey,
-        supplyKey: senderKey,
+        supplyKey: senderKey.publicKey,
+        additionalSigners: [senderKey],
     });
     console.log("Created token:   ", tokenId);
 
     // The receiver must opt-in before it can hold the token.
 
-    await tokenService.associateToken(tokenId, receiver.accountId, receiverKey);
+    await tokenService.associateToken({
+        tokenId,
+        accountId: receiver.accountId,
+        additionalSigners: [receiverKey],
+    });
     console.log("Receiver associated with token");
 
     // Transfer 250 units. `expectedDecimals: 2` asserts the token's decimals
@@ -183,21 +187,26 @@ async function transferNft(
         tokenName: "Transfer Demo NFT",
         tokenSymbol: "TXDN",
         treasuryAccountId: sender.accountId,
-        supplyKey: senderKey,
+        supplyKey: senderKey.publicKey,
+        additionalSigners: [senderKey],
     });
     console.log("Created NFT collection:", tokenId);
 
-    const serials = await tokenService.mintNfts(
+    await tokenService.mintToken({
         tokenId,
-        [Buffer.from("nft-meta-1")],
-        senderKey,
-    );
-    const serial = serials[0];
+        metadata: [Buffer.from("nft-meta-1")],
+        additionalSigners: [senderKey],
+    });
+    const serial = 1;
     console.log("Minted serial:", serial);
 
     // The receiver must opt-in to the NFT collection before it can hold a serial.
 
-    await tokenService.associateToken(tokenId, receiver.accountId, receiverKey);
+    await tokenService.associateToken({
+        tokenId,
+        accountId: receiver.accountId,
+        additionalSigners: [receiverKey],
+    });
     console.log("Receiver associated with NFT collection");
 
     await accountService.transferNft(
@@ -308,11 +317,16 @@ async function scheduleTransferToken(
         decimals: 0,
         initialSupply: 1_000,
         treasuryAccountId: sender.accountId,
-        supplyKey: senderKey,
+        supplyKey: senderKey.publicKey,
+        additionalSigners: [senderKey],
     });
     console.log("Created token:   ", tokenId);
 
-    await tokenService.associateToken(tokenId, receiver.accountId, receiverKey);
+    await tokenService.associateToken({
+        tokenId,
+        accountId: receiver.accountId,
+        additionalSigners: [receiverKey],
+    });
 
     const { scheduleId, transactionId } =
         await accountService.scheduleTransferToken(
@@ -366,19 +380,24 @@ async function scheduleTransferNft(
         tokenName: "Scheduled NFT",
         tokenSymbol: "SNFT",
         treasuryAccountId: sender.accountId,
-        supplyKey: senderKey,
+        supplyKey: senderKey.publicKey,
+        additionalSigners: [senderKey],
     });
     console.log("Created NFT collection:", tokenId);
 
-    const serials = await tokenService.mintNfts(
+    await tokenService.mintToken({
         tokenId,
-        [Buffer.from("scheduled-nft-meta")],
-        senderKey,
-    );
-    const serial = serials[0];
+        metadata: [Buffer.from("scheduled-nft-meta")],
+        additionalSigners: [senderKey],
+    });
+    const serial = 1;
     console.log("Minted serial:", serial);
 
-    await tokenService.associateToken(tokenId, receiver.accountId, receiverKey);
+    await tokenService.associateToken({
+        tokenId,
+        accountId: receiver.accountId,
+        additionalSigners: [receiverKey],
+    });
 
     const { scheduleId, transactionId } =
         await accountService.scheduleTransferNft(

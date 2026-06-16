@@ -128,7 +128,8 @@ async function deleteTokenAllowance(
         decimals: 2,
         initialSupply: 10000,
         treasuryAccountId: owner.accountId,
-        supplyKey: ownerKey,
+        supplyKey: ownerKey.publicKey,
+        additionalSigners: [ownerKey],
     });
     console.log("Created token:", tokenId);
 
@@ -208,20 +209,21 @@ async function deleteNftAllowanceBySerials(
         tokenName: "Per-Serial Revocation NFT",
         tokenSymbol: "PSRN",
         treasuryAccountId: owner.accountId,
-        supplyKey: ownerKey,
+        supplyKey: ownerKey.publicKey,
+        additionalSigners: [ownerKey],
     });
     console.log("Created NFT collection:", tokenId);
 
-    const serials = await tokenService.mintNfts(
+    await tokenService.mintToken({
         tokenId,
-        [
+        metadata: [
             Buffer.from("metadata-1"),
             Buffer.from("metadata-2"),
             Buffer.from("metadata-3"),
         ],
-        ownerKey,
-    );
-    console.log("Minted serials:", serials);
+        additionalSigners: [ownerKey],
+    });
+    console.log("Minted serials: [1, 2, 3]");
 
     // Grant per-serial allowance for serials 1 and 2.
 
@@ -302,15 +304,16 @@ async function deleteAllNftAllowances(
         tokenName: "All-Serials Revocation NFT",
         tokenSymbol: "ASRN",
         treasuryAccountId: owner.accountId,
-        supplyKey: ownerKey,
+        supplyKey: ownerKey.publicKey,
+        additionalSigners: [ownerKey],
     });
     console.log("Created NFT collection:", tokenId);
 
-    await tokenService.mintNfts(
+    await tokenService.mintToken({
         tokenId,
-        [Buffer.from("metadata-1"), Buffer.from("metadata-2")],
-        ownerKey,
-    );
+        metadata: [Buffer.from("metadata-1"), Buffer.from("metadata-2")],
+        additionalSigners: [ownerKey],
+    });
     console.log("Minted serials: [1, 2]");
 
     // Grant blanket approved-for-all.

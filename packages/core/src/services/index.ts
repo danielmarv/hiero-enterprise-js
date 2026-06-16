@@ -14,8 +14,6 @@ export type {
     NftAllowanceApproval,
 } from "./account/index.js";
 export { FileService } from "./file-service.js";
-export { NftService } from "./nft-service.js";
-export type { CreateNftTypeOptions } from "./nft-service.js";
 export { TokenService } from "./token/index.js";
 export type {
     CreateFungibleTokenOptions,
