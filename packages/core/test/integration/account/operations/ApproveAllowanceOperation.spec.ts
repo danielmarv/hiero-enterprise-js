@@ -10,20 +10,17 @@ import {
 import { createOwnerSpenderPair } from "../../../utils/integration-fixtures.js";
 import {
     AccountService,
-    FungibleTokenService,
-    NftService,
+    TokenService,
 } from "../../../../src/services/index.js";
 
 describe("AccountService approve-allowance operations [Integration]", () => {
     let client: AccountService;
-    let tokenService: FungibleTokenService;
-    let nftService: NftService;
+    let tokenService: TokenService;
 
     beforeAll(() => {
         const ctx = setupIntegrationTestEnv();
         client = new AccountService(ctx);
-        tokenService = new FungibleTokenService(ctx);
-        nftService = new NftService(ctx);
+        tokenService = new TokenService(ctx);
     });
 
     it("approves an HBAR allowance for a spender account", async () => {
@@ -52,13 +49,12 @@ describe("AccountService approve-allowance operations [Integration]", () => {
     it("approves a fungible token allowance for a spender account", async () => {
         const { owner, spender } = await createOwnerSpenderPair(client);
 
-        const tokenId = await tokenService.createToken({
-            name: "Allowance Test Token",
-            symbol: "ATT",
+        const tokenId = await tokenService.createFungibleToken({
+            tokenName: "Allowance Test Token",
+            tokenSymbol: "ATT",
             decimals: 2,
             initialSupply: 10000,
             treasuryAccountId: owner.accountId,
-            treasuryKey: owner.key,
             supplyKey: owner.key,
         });
 
@@ -88,15 +84,14 @@ describe("AccountService approve-allowance operations [Integration]", () => {
     it("approves an NFT allowance for specific serials", async () => {
         const { owner, spender } = await createOwnerSpenderPair(client);
 
-        const tokenId = await nftService.createNftType({
-            name: "Allowance NFT",
-            symbol: "ANFT",
+        const tokenId = await tokenService.createNft({
+            tokenName: "Allowance NFT",
+            tokenSymbol: "ANFT",
             treasuryAccountId: owner.accountId,
-            treasuryKey: owner.key,
             supplyKey: owner.key,
         });
 
-        await nftService.mintNfts(
+        await tokenService.mintNfts(
             tokenId,
             [Buffer.from("meta-1"), Buffer.from("meta-2")],
             owner.key,

@@ -53,7 +53,7 @@ await app.register(hieroPlugin);
 
 All services become available at `app.hiero`:
 
-- **Services**: `accountService`, `fileService`, `fungibleTokenService`, `nftService`, `smartContractService`, `topicService`
+- **Services**: `accountService`, `fileService`, `tokenService`, `smartContractService`, `topicService`
 - **Repositories**: `accountRepository`, `nftRepository`, `tokenRepository`, `topicRepository`, `transactionRepository`, `networkRepository`
 - **Infra**: `context`
 

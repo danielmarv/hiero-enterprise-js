@@ -19,8 +19,7 @@
 import {
     AccountService,
     AccountType,
-    NftService,
-    FungibleTokenService,
+    TokenService,
     HieroContext,
     PrivateKey,
     Hbar,
@@ -99,7 +98,7 @@ async function deleteHbarAllowance(accountService: AccountService) {
  */
 async function deleteTokenAllowance(
     accountService: AccountService,
-    tokenService: FungibleTokenService,
+    tokenService: TokenService,
 ) {
     console.log("=== Delete Token Allowance ===\n");
 
@@ -123,13 +122,12 @@ async function deleteTokenAllowance(
 
     // Owner creates a token they'll grant the spender access to.
 
-    const tokenId = await tokenService.createToken({
-        name: "Revocation Demo Token",
-        symbol: "RVDT",
+    const tokenId = await tokenService.createFungibleToken({
+        tokenName: "Revocation Demo Token",
+        tokenSymbol: "RVDT",
         decimals: 2,
         initialSupply: 10000,
         treasuryAccountId: owner.accountId,
-        treasuryKey: ownerKey,
         supplyKey: ownerKey,
     });
     console.log("Created token:", tokenId);
@@ -184,7 +182,7 @@ async function deleteTokenAllowance(
  */
 async function deleteNftAllowanceBySerials(
     accountService: AccountService,
-    nftService: NftService,
+    tokenService: TokenService,
 ) {
     console.log("=== Delete NFT Allowance (Specific Serials) ===\n");
 
@@ -206,16 +204,15 @@ async function deleteNftAllowanceBySerials(
     });
     console.log("Spender account:", spender.accountId);
 
-    const tokenId = await nftService.createNftType({
-        name: "Per-Serial Revocation NFT",
-        symbol: "PSRN",
+    const tokenId = await tokenService.createNft({
+        tokenName: "Per-Serial Revocation NFT",
+        tokenSymbol: "PSRN",
         treasuryAccountId: owner.accountId,
-        treasuryKey: ownerKey,
         supplyKey: ownerKey,
     });
     console.log("Created NFT collection:", tokenId);
 
-    const serials = await nftService.mintNfts(
+    const serials = await tokenService.mintNfts(
         tokenId,
         [
             Buffer.from("metadata-1"),
@@ -279,7 +276,7 @@ async function deleteNftAllowanceBySerials(
  */
 async function deleteAllNftAllowances(
     accountService: AccountService,
-    nftService: NftService,
+    tokenService: TokenService,
 ) {
     console.log("=== Delete NFT Allowance (All Serials) ===\n");
 
@@ -301,16 +298,15 @@ async function deleteAllNftAllowances(
     });
     console.log("Spender account:", spender.accountId);
 
-    const tokenId = await nftService.createNftType({
-        name: "All-Serials Revocation NFT",
-        symbol: "ASRN",
+    const tokenId = await tokenService.createNft({
+        tokenName: "All-Serials Revocation NFT",
+        tokenSymbol: "ASRN",
         treasuryAccountId: owner.accountId,
-        treasuryKey: ownerKey,
         supplyKey: ownerKey,
     });
     console.log("Created NFT collection:", tokenId);
 
-    await nftService.mintNfts(
+    await tokenService.mintNfts(
         tokenId,
         [Buffer.from("metadata-1"), Buffer.from("metadata-2")],
         ownerKey,
@@ -360,13 +356,12 @@ async function deleteAllNftAllowances(
 async function main() {
     const context = new HieroContext(getED25519Config());
     const accountService = new AccountService(context);
-    const tokenService = new FungibleTokenService(context);
-    const nftService = new NftService(context);
+    const tokenService = new TokenService(context);
     try {
         await deleteHbarAllowance(accountService);
         await deleteTokenAllowance(accountService, tokenService);
-        await deleteNftAllowanceBySerials(accountService, nftService);
-        await deleteAllNftAllowances(accountService, nftService);
+        await deleteNftAllowanceBySerials(accountService, tokenService);
+        await deleteAllNftAllowances(accountService, tokenService);
         console.log("All allowance revocation scenarios complete.");
     } finally {
         context.client.close();

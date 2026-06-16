@@ -10,20 +10,17 @@ import {
 import { createOwnerSpenderPair } from "../../../utils/integration-fixtures.js";
 import {
     AccountService,
-    FungibleTokenService,
-    NftService,
+    TokenService,
 } from "../../../../src/services/index.js";
 
 describe("AccountService delete-allowance operations [Integration]", () => {
     let client: AccountService;
-    let tokenService: FungibleTokenService;
-    let nftService: NftService;
+    let tokenService: TokenService;
 
     beforeAll(() => {
         const ctx = setupIntegrationTestEnv();
         client = new AccountService(ctx);
-        tokenService = new FungibleTokenService(ctx);
-        nftService = new NftService(ctx);
+        tokenService = new TokenService(ctx);
     });
 
     it("deletes an HBAR allowance by setting amount to 0", async () => {
@@ -70,13 +67,12 @@ describe("AccountService delete-allowance operations [Integration]", () => {
     it("deletes a fungible token allowance by setting amount to 0", async () => {
         const { owner, spender } = await createOwnerSpenderPair(client);
 
-        const tokenId = await tokenService.createToken({
-            name: "Delete Allowance Token",
-            symbol: "DAT",
+        const tokenId = await tokenService.createFungibleToken({
+            tokenName: "Delete Allowance Token",
+            tokenSymbol: "DAT",
             decimals: 2,
             initialSupply: 10000,
             treasuryAccountId: owner.accountId,
-            treasuryKey: owner.key,
             supplyKey: owner.key,
         });
 
@@ -126,15 +122,14 @@ describe("AccountService delete-allowance operations [Integration]", () => {
     it("deletes an NFT allowance for specific serials", async () => {
         const { owner, spender } = await createOwnerSpenderPair(client);
 
-        const tokenId = await nftService.createNftType({
-            name: "Delete NFT Allowance",
-            symbol: "DNAL",
+        const tokenId = await tokenService.createNft({
+            tokenName: "Delete NFT Allowance",
+            tokenSymbol: "DNAL",
             treasuryAccountId: owner.accountId,
-            treasuryKey: owner.key,
             supplyKey: owner.key,
         });
 
-        await nftService.mintNfts(
+        await tokenService.mintNfts(
             tokenId,
             [Buffer.from("meta-1"), Buffer.from("meta-2")],
             owner.key,
