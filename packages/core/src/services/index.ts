@@ -20,7 +20,11 @@ export { TokenService } from "./token/index.js";
 export type {
     CreateFungibleTokenOptions,
     CreateNftOptions,
+    MintTokenOptions,
+    AssociateTokenOptions,
     TokenCreateOperationOptions,
+    TokenMintOperationOptions,
+    TokenAssociateOperationOptions,
 } from "./token/index.js";
 export { SmartContractService } from "./smart-contract-service.js";
 export { TopicService } from "./topic-service.js";

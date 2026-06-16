@@ -1,8 +1,16 @@
 import { TokenType, TokenSupplyType, type Key } from "@hiero-ledger/sdk";
 import type { IHieroContext } from "../../context/index.js";
 import type { ScheduleOptions, ScheduledResult } from "../transaction/index.js";
-import { TokenCreateOperation } from "./operations/index.js";
-import type { TokenCreateOperationOptions } from "./operations/index.js";
+import {
+    TokenCreateOperation,
+    TokenMintOperation,
+    TokenAssociateOperation,
+} from "./operations/index.js";
+import type {
+    TokenCreateOperationOptions,
+    TokenMintOperationOptions,
+    TokenAssociateOperationOptions,
+} from "./operations/index.js";
 
 /**
  * Options for creating a fungible token.
@@ -39,6 +47,12 @@ export type CreateNftOptions = Omit<
     supplyKey: Key;
 };
 
+/** Options for minting token supply (fungible amount or NFT metadata). */
+export type MintTokenOptions = TokenMintOperationOptions;
+
+/** Options for associating a single token to an account. */
+export type AssociateTokenOptions = TokenAssociateOperationOptions;
+
 /**
  * Service for managing native tokens on the Hiero network (HTS) — covers
  * both fungible tokens and non-fungible token (NFT) collections via a
@@ -46,9 +60,13 @@ export type CreateNftOptions = Omit<
  */
 export class TokenService {
     private readonly createOperation: TokenCreateOperation;
+    private readonly mintOperation: TokenMintOperation;
+    private readonly associateOperation: TokenAssociateOperation;
 
     constructor(private readonly context: IHieroContext) {
         this.createOperation = new TokenCreateOperation(context);
+        this.mintOperation = new TokenMintOperation(context);
+        this.associateOperation = new TokenAssociateOperation(context);
     }
 
     /**
@@ -100,6 +118,28 @@ export class TokenService {
      * Schedule fungible token creation for deferred multi-sig execution.
      * Returns a `scheduleId` — other parties can then sign using
      * `ScheduleService` before the transaction executes.
+     *
+     * @param options.tokenName - Token name (max 100 bytes)
+     * @param options.tokenSymbol - Token symbol (max 100 bytes)
+     * @param options.decimals - Decimal places (default: 0)
+     * @param options.initialSupply - Initial supply (default: 0, in smallest units)
+     * @param options.treasuryAccountId - Account that receives initial supply and serves as treasury
+     * @param options.adminKey - Admin key required to update / delete the token
+     * @param options.supplyKey - Required to mint / burn after creation
+     * @param options.kycKey - Required to grant / revoke KYC on accounts holding the token
+     * @param options.freezeKey - Required to freeze / unfreeze accounts holding the token
+     * @param options.pauseKey - Required to pause / unpause the entire token
+     * @param options.wipeKey - Required to wipe token balances from accounts
+     * @param options.feeScheduleKey - Required to update custom fees
+     * @param options.metadataKey - Required to update token metadata
+     * @param options.maxSupply - Maximum token supply (auto-sets `supplyType` to Finite)
+     * @param options.supplyType - Explicit supply type override (`Infinite` or `Finite`)
+     * @param options.customFees - Custom fee schedule
+     * @param options.tokenMemo - Token memo (max 100 bytes)
+     * @param options.metadata - Arbitrary token metadata bytes
+     * @param scheduleOptions.payerAccountId - Override the account that pays for the schedule creation
+     * @param scheduleOptions.adminKey - Optional schedule admin key for later updates / deletion
+     * @param scheduleOptions.scheduleMemo - Optional memo stored on the schedule itself
      */
     async scheduleCreateFungibleToken(
         options: CreateFungibleTokenOptions,
@@ -158,6 +198,26 @@ export class TokenService {
      * Schedule NFT collection creation for deferred multi-sig execution.
      * Returns a `scheduleId` — other parties can then sign using
      * `ScheduleService` before the transaction executes.
+     *
+     * @param options.tokenName - Collection name (max 100 bytes)
+     * @param options.tokenSymbol - Collection symbol (max 100 bytes)
+     * @param options.treasuryAccountId - Account that owns newly minted NFTs by default
+     * @param options.supplyKey - Required, used to mint NFTs after creation
+     * @param options.adminKey - Admin key required to update / delete the collection
+     * @param options.kycKey - Required to grant / revoke KYC on holders
+     * @param options.freezeKey - Required to freeze / unfreeze holders
+     * @param options.pauseKey - Required to pause / unpause the collection
+     * @param options.wipeKey - Required to wipe NFTs from holders
+     * @param options.feeScheduleKey - Required to update custom fees
+     * @param options.metadataKey - Required to update collection metadata
+     * @param options.maxSupply - Maximum number of NFTs (auto-sets `supplyType` to Finite)
+     * @param options.supplyType - Explicit supply type override (`Infinite` or `Finite`)
+     * @param options.customFees - Custom fee schedule
+     * @param options.tokenMemo - Collection memo (max 100 bytes)
+     * @param options.metadata - Arbitrary collection metadata bytes
+     * @param scheduleOptions.payerAccountId - Override the account that pays for the schedule creation
+     * @param scheduleOptions.adminKey - Optional schedule admin key for later updates / deletion
+     * @param scheduleOptions.scheduleMemo - Optional memo stored on the schedule itself
      */
     async scheduleCreateNft(
         options: CreateNftOptions,
@@ -167,6 +227,65 @@ export class TokenService {
             this.buildNftOperationOptions(options),
             scheduleOptions,
         );
+    }
+
+    /**
+     * Mint additional supply for an existing token.
+     *
+     * - Fungible: set `amount`
+     * - NFT: set `metadata` (one metadata entry per NFT serial)
+     *
+     * @param options.tokenId - Token to mint additional supply for
+     * @param options.amount - Fungible amount to mint
+     * @param options.metadata - NFT metadata entries to mint, one per new serial
+     */
+    async mintToken(options: MintTokenOptions): Promise<void> {
+        return await this.mintOperation.execute(options);
+    }
+
+    /**
+     * Schedule token minting for deferred multi-sig execution.
+     *
+     * @param options.tokenId - Token to mint additional supply for
+     * @param options.amount - Fungible amount to mint
+     * @param options.metadata - NFT metadata entries to mint, one per new serial
+     * @param scheduleOptions.payerAccountId - Override the account that pays for the schedule creation
+     * @param scheduleOptions.adminKey - Optional schedule admin key for later updates / deletion
+     * @param scheduleOptions.scheduleMemo - Optional memo stored on the schedule itself
+     */
+    async scheduleMintToken(
+        options: MintTokenOptions,
+        scheduleOptions?: ScheduleOptions,
+    ): Promise<ScheduledResult> {
+        return await this.mintOperation.schedule(options, scheduleOptions);
+    }
+
+    /**
+     * Associate one token with an account.
+     *
+     * Association is required before non-treasury accounts can hold a token.
+     *
+     * @param options.accountId - Account to associate the token with
+     * @param options.tokenId - Token to associate to the account
+     */
+    async associateToken(options: AssociateTokenOptions): Promise<void> {
+        return await this.associateOperation.execute(options);
+    }
+
+    /**
+     * Schedule token association for deferred multi-sig execution.
+     *
+     * @param options.accountId - Account to associate the token with
+     * @param options.tokenId - Token to associate to the account
+     * @param scheduleOptions.payerAccountId - Override the account that pays for the schedule creation
+     * @param scheduleOptions.adminKey - Optional schedule admin key for later updates / deletion
+     * @param scheduleOptions.scheduleMemo - Optional memo stored on the schedule itself
+     */
+    async scheduleAssociateToken(
+        options: AssociateTokenOptions,
+        scheduleOptions?: ScheduleOptions,
+    ): Promise<ScheduledResult> {
+        return await this.associateOperation.schedule(options, scheduleOptions);
     }
 
     private buildFungibleOperationOptions(
