@@ -95,14 +95,34 @@ async function scheduleAssociateToken(
         additionalSigners: [ownerKey],
     });
 
-    const scheduled = await tokenService.scheduleAssociateToken(
-        {
-            accountId: scheduledReceiver.accountId,
-            tokenId,
-            additionalSigners: [scheduledReceiverKey],
-        },
-        { scheduleMemo: "pending receiver approval" },
-    );
+    let scheduled:
+        | {
+              scheduleId: string;
+              transactionId: string;
+          }
+        | undefined;
+
+    try {
+        scheduled = await tokenService.scheduleAssociateToken(
+            {
+                accountId: scheduledReceiver.accountId,
+                tokenId,
+                additionalSigners: [scheduledReceiverKey],
+            },
+            { scheduleMemo: "pending receiver approval" },
+        );
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (message.includes("SCHEDULED_TRANSACTION_NOT_IN_WHITELIST")) {
+            console.log(
+                "Scheduled token associate is not enabled on this network.",
+            );
+            console.log("Skipping scheduled associate scenario.");
+            console.log();
+            return;
+        }
+        throw error;
+    }
 
     console.log("Owner account:", owner.accountId);
     console.log("Receiver account:", scheduledReceiver.accountId);
