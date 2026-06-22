@@ -105,7 +105,24 @@ export class TokenBurnValidator {
                 );
             }
 
-            const isNonPositive = Long.isLong(serial)
+            const isLong = Long.isLong(serial);
+            const isNumber = typeof serial === "number";
+
+            if (!isLong && !isNumber) {
+                throw normalizeError(
+                    new Error("serials entries must be a number or Long."),
+                    "TokenBurnValidator",
+                );
+            }
+
+            if (isNumber && !Number.isInteger(serial)) {
+                throw normalizeError(
+                    new Error("serials entries must be positive integers."),
+                    "TokenBurnValidator",
+                );
+            }
+
+            const isNonPositive = isLong
                 ? serial.isNegative() || serial.isZero()
                 : (serial as number) <= 0;
 

@@ -196,6 +196,42 @@ describe("TokenBurnValidator", () => {
             ).toThrow(/serials entries must be positive integers/);
         });
 
+        it("throws when a serial is a string", () => {
+            expect(() =>
+                validator.validate({
+                    tokenId: "0.0.500",
+                    serials: ["1" as unknown as number],
+                }),
+            ).toThrow(/serials entries must be a number or Long/);
+        });
+
+        it("throws when a serial is a non-integer number", () => {
+            expect(() =>
+                validator.validate({
+                    tokenId: "0.0.500",
+                    serials: [1.5],
+                }),
+            ).toThrow(/serials entries must be positive integers/);
+        });
+
+        it("throws when a serial is NaN", () => {
+            expect(() =>
+                validator.validate({
+                    tokenId: "0.0.500",
+                    serials: [Number.NaN],
+                }),
+            ).toThrow(/serials entries must be positive integers/);
+        });
+
+        it("throws when a serial is Infinity", () => {
+            expect(() =>
+                validator.validate({
+                    tokenId: "0.0.500",
+                    serials: [Number.POSITIVE_INFINITY],
+                }),
+            ).toThrow(/serials entries must be positive integers/);
+        });
+
         it("passes with positive Long serials", () => {
             expect(() =>
                 validator.validate({
