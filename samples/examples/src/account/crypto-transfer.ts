@@ -23,8 +23,7 @@
 import {
     AccountService,
     AccountType,
-    FungibleTokenService,
-    NftService,
+    TokenService,
     HieroContext,
     PrivateKey,
     Hbar,
@@ -87,7 +86,7 @@ async function transferHbar(accountService: AccountService) {
  */
 async function transferToken(
     accountService: AccountService,
-    tokenService: FungibleTokenService,
+    tokenService: TokenService,
 ) {
     console.log("=== Transfer Fungible Token ===\n");
 
@@ -111,20 +110,24 @@ async function transferToken(
 
     // Sender creates the token and holds the full initial supply as treasury.
 
-    const tokenId = await tokenService.createToken({
-        name: "Transfer Demo Token",
-        symbol: "TXD",
+    const tokenId = await tokenService.createFungibleToken({
+        tokenName: "Transfer Demo Token",
+        tokenSymbol: "TXD",
         decimals: 2,
         initialSupply: 10_000,
         treasuryAccountId: sender.accountId,
-        treasuryKey: senderKey,
-        supplyKey: senderKey,
+        supplyKey: senderKey.publicKey,
+        additionalSigners: [senderKey],
     });
     console.log("Created token:   ", tokenId);
 
     // The receiver must opt-in before it can hold the token.
 
-    await tokenService.associateToken(tokenId, receiver.accountId, receiverKey);
+    await tokenService.associateToken({
+        tokenId,
+        accountId: receiver.accountId,
+        additionalSigners: [receiverKey],
+    });
     console.log("Receiver associated with token");
 
     // Transfer 250 units. `expectedDecimals: 2` asserts the token's decimals
@@ -158,8 +161,7 @@ async function transferToken(
  */
 async function transferNft(
     accountService: AccountService,
-    tokenService: FungibleTokenService,
-    nftService: NftService,
+    tokenService: TokenService,
 ) {
     console.log("=== Transfer NFT ===\n");
 
@@ -181,26 +183,30 @@ async function transferNft(
     });
     console.log("Receiver account:", receiver.accountId);
 
-    const tokenId = await nftService.createNftType({
-        name: "Transfer Demo NFT",
-        symbol: "TXDN",
+    const tokenId = await tokenService.createNft({
+        tokenName: "Transfer Demo NFT",
+        tokenSymbol: "TXDN",
         treasuryAccountId: sender.accountId,
-        treasuryKey: senderKey,
-        supplyKey: senderKey,
+        supplyKey: senderKey.publicKey,
+        additionalSigners: [senderKey],
     });
     console.log("Created NFT collection:", tokenId);
 
-    const serials = await nftService.mintNfts(
+    await tokenService.mintToken({
         tokenId,
-        [Buffer.from("nft-meta-1")],
-        senderKey,
-    );
-    const serial = serials[0];
+        metadata: [Buffer.from("nft-meta-1")],
+        additionalSigners: [senderKey],
+    });
+    const serial = 1;
     console.log("Minted serial:", serial);
 
     // The receiver must opt-in to the NFT collection before it can hold a serial.
 
-    await tokenService.associateToken(tokenId, receiver.accountId, receiverKey);
+    await tokenService.associateToken({
+        tokenId,
+        accountId: receiver.accountId,
+        additionalSigners: [receiverKey],
+    });
     console.log("Receiver associated with NFT collection");
 
     await accountService.transferNft(
@@ -283,7 +289,7 @@ async function scheduleTransferHbar(accountService: AccountService) {
  */
 async function scheduleTransferToken(
     accountService: AccountService,
-    tokenService: FungibleTokenService,
+    tokenService: TokenService,
 ) {
     console.log("=== Schedule Token Transfer ===\n");
 
@@ -305,18 +311,22 @@ async function scheduleTransferToken(
     });
     console.log("Receiver account:", receiver.accountId);
 
-    const tokenId = await tokenService.createToken({
-        name: "Scheduled Transfer Token",
-        symbol: "STX",
+    const tokenId = await tokenService.createFungibleToken({
+        tokenName: "Scheduled Transfer Token",
+        tokenSymbol: "STX",
         decimals: 0,
         initialSupply: 1_000,
         treasuryAccountId: sender.accountId,
-        treasuryKey: senderKey,
-        supplyKey: senderKey,
+        supplyKey: senderKey.publicKey,
+        additionalSigners: [senderKey],
     });
     console.log("Created token:   ", tokenId);
 
-    await tokenService.associateToken(tokenId, receiver.accountId, receiverKey);
+    await tokenService.associateToken({
+        tokenId,
+        accountId: receiver.accountId,
+        additionalSigners: [receiverKey],
+    });
 
     const { scheduleId, transactionId } =
         await accountService.scheduleTransferToken(
@@ -344,8 +354,7 @@ async function scheduleTransferToken(
  */
 async function scheduleTransferNft(
     accountService: AccountService,
-    tokenService: FungibleTokenService,
-    nftService: NftService,
+    tokenService: TokenService,
 ) {
     console.log("=== Schedule NFT Transfer ===\n");
 
@@ -367,24 +376,28 @@ async function scheduleTransferNft(
     });
     console.log("Receiver account:", receiver.accountId);
 
-    const tokenId = await nftService.createNftType({
-        name: "Scheduled NFT",
-        symbol: "SNFT",
+    const tokenId = await tokenService.createNft({
+        tokenName: "Scheduled NFT",
+        tokenSymbol: "SNFT",
         treasuryAccountId: sender.accountId,
-        treasuryKey: senderKey,
-        supplyKey: senderKey,
+        supplyKey: senderKey.publicKey,
+        additionalSigners: [senderKey],
     });
     console.log("Created NFT collection:", tokenId);
 
-    const serials = await nftService.mintNfts(
+    await tokenService.mintToken({
         tokenId,
-        [Buffer.from("scheduled-nft-meta")],
-        senderKey,
-    );
-    const serial = serials[0];
+        metadata: [Buffer.from("scheduled-nft-meta")],
+        additionalSigners: [senderKey],
+    });
+    const serial = 1;
     console.log("Minted serial:", serial);
 
-    await tokenService.associateToken(tokenId, receiver.accountId, receiverKey);
+    await tokenService.associateToken({
+        tokenId,
+        accountId: receiver.accountId,
+        additionalSigners: [receiverKey],
+    });
 
     const { scheduleId, transactionId } =
         await accountService.scheduleTransferNft(
@@ -406,15 +419,14 @@ async function scheduleTransferNft(
 async function main() {
     const context = new HieroContext(getED25519Config());
     const accountService = new AccountService(context);
-    const tokenService = new FungibleTokenService(context);
-    const nftService = new NftService(context);
+    const tokenService = new TokenService(context);
     try {
         await transferHbar(accountService);
         await transferToken(accountService, tokenService);
-        await transferNft(accountService, tokenService, nftService);
+        await transferNft(accountService, tokenService);
         await scheduleTransferHbar(accountService);
         await scheduleTransferToken(accountService, tokenService);
-        await scheduleTransferNft(accountService, tokenService, nftService);
+        await scheduleTransferNft(accountService, tokenService);
         console.log("All transfer scenarios complete.");
     } finally {
         context.client.close();

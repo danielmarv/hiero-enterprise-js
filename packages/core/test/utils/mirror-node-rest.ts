@@ -35,6 +35,12 @@ export interface MirrorNftRecord {
     account_id?: string;
 }
 
+export interface MirrorAccountToken {
+    token_id: string;
+    balance: string;
+    decimals?: number;
+}
+
 async function getJson<T>(url: string): Promise<T> {
     const res = await fetch(url);
     if (!res.ok) {
@@ -80,4 +86,16 @@ export async function queryNftRecord(
     return getJson<MirrorNftRecord>(
         `${getMirrorUrl()}/api/v1/tokens/${tokenId}/nfts/${serial}`,
     );
+}
+
+/**
+ * Fetch token relationships for an account.
+ */
+export async function queryAccountTokens(
+    accountId: string,
+): Promise<MirrorAccountToken[]> {
+    const data = await getJson<{ tokens?: MirrorAccountToken[] }>(
+        `${getMirrorUrl()}/api/v1/accounts/${accountId}/tokens`,
+    );
+    return data.tokens ?? [];
 }

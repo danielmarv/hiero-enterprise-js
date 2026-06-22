@@ -2,30 +2,37 @@ import { describe, it, expect, beforeAll } from "vitest";
 import { Status } from "@hiero-ledger/sdk";
 import { setupIntegrationTestEnv } from "../../../utils/env.js";
 import { createOwnerSpenderPair } from "../../../utils/integration-fixtures.js";
-import { AccountService, NftService } from "../../../../src/services/index.js";
+import {
+    AccountService,
+    TokenService,
+} from "../../../../src/services/index.js";
 
 describe("AccountService.deleteAllNftAllowances [Integration]", () => {
     let client: AccountService;
-    let nftService: NftService;
+    let tokenService: TokenService;
 
     beforeAll(() => {
         const ctx = setupIntegrationTestEnv();
         client = new AccountService(ctx);
-        nftService = new NftService(ctx);
+        tokenService = new TokenService(ctx);
     });
 
     it("deletes an approve-for-all-serials NFT allowance", async () => {
         const { owner, spender } = await createOwnerSpenderPair(client);
 
-        const tokenId = await nftService.createNftType({
-            name: "Delete All NFT Allowance",
-            symbol: "DANAL",
+        const tokenId = await tokenService.createNft({
+            tokenName: "Delete All NFT Allowance",
+            tokenSymbol: "DANAL",
             treasuryAccountId: owner.accountId,
-            treasuryKey: owner.key,
-            supplyKey: owner.key,
+            supplyKey: owner.key.publicKey,
+            additionalSigners: [owner.key],
         });
 
-        await nftService.mintNfts(tokenId, [Buffer.from("meta-1")], owner.key);
+        await tokenService.mintToken({
+            tokenId,
+            metadata: [Buffer.from("meta-1")],
+            additionalSigners: [owner.key],
+        });
 
         // Grant approve-for-all-serials. We verify success via the returned
         // receipt's status field rather than via a mirror-node lookup because

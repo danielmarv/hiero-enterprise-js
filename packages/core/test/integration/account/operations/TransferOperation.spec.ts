@@ -9,22 +9,19 @@ import {
 } from "../../../utils/integration-fixtures.js";
 import {
     AccountService,
-    FungibleTokenService,
-    NftService,
+    TokenService,
 } from "../../../../src/services/index.js";
 
 describe("TransferOperation [Integration]", () => {
     let client: AccountService;
-    let tokenService: FungibleTokenService;
-    let nftService: NftService;
+    let tokenService: TokenService;
     let operatorAccountId: string;
     let operatorKey: PrivateKey;
 
     beforeAll(() => {
         const ctx = setupIntegrationTestEnv();
         client = new AccountService(ctx);
-        tokenService = new FungibleTokenService(ctx);
-        nftService = new NftService(ctx);
+        tokenService = new TokenService(ctx);
         operatorAccountId = ctx.operatorAccountId.toString();
         // Operator key — needed when the operator acts as treasury/supply key
         const rawKey = process.env.HIERO_OPERATOR_KEY;
@@ -80,22 +77,22 @@ describe("TransferOperation [Integration]", () => {
     // Fungible token transfers
     describe("transferToken", () => {
         it("transfers fungible tokens from the operator to a recipient", async () => {
-            const tokenId = await tokenService.createToken({
-                name: "Transfer Test Token",
-                symbol: "TTT",
+            const tokenId = await tokenService.createFungibleToken({
+                tokenName: "Transfer Test Token",
+                tokenSymbol: "TTT",
                 decimals: 2,
                 initialSupply: 10_000,
                 treasuryAccountId: operatorAccountId,
-                treasuryKey: operatorKey,
-                supplyKey: operatorKey,
+                supplyKey: operatorKey.publicKey,
+                additionalSigners: [operatorKey],
             });
 
             const receiver = await createTestAccount(client, 1);
-            await tokenService.associateToken(
+            await tokenService.associateToken({
                 tokenId,
-                receiver.accountId,
-                receiver.key,
-            );
+                accountId: receiver.accountId,
+                additionalSigners: [receiver.key],
+            });
 
             await client.transferToken(
                 tokenId,
@@ -113,22 +110,23 @@ describe("TransferOperation [Integration]", () => {
         });
 
         it("transfers tokens with matching expectedDecimals", async () => {
-            const tokenId = await tokenService.createToken({
-                name: "Decimals Test Token",
-                symbol: "DEC",
+            const tokenId = await tokenService.createFungibleToken({
+                tokenName: "Decimals Test Token",
+                tokenSymbol: "DEC",
                 decimals: 4,
                 initialSupply: 1_000_000,
                 treasuryAccountId: operatorAccountId,
-                treasuryKey: operatorKey,
-                supplyKey: operatorKey,
+                supplyKey: operatorKey.publicKey,
+                additionalSigners: [operatorKey],
             });
 
             const receiver = await createTestAccount(client, 1);
-            await tokenService.associateToken(
+
+            await tokenService.associateToken({
                 tokenId,
-                receiver.accountId,
-                receiver.key,
-            );
+                accountId: receiver.accountId,
+                additionalSigners: [receiver.key],
+            });
 
             await client.transferToken(
                 tokenId,
@@ -148,21 +146,21 @@ describe("TransferOperation [Integration]", () => {
         it("transfers tokens between two non-operator accounts", async () => {
             const { owner, spender } = await createOwnerSpenderPair(client);
 
-            const tokenId = await tokenService.createToken({
-                name: "Peer Transfer Token",
-                symbol: "PEER",
+            const tokenId = await tokenService.createFungibleToken({
+                tokenName: "Peer Transfer Token",
+                tokenSymbol: "PEER",
                 decimals: 0,
                 initialSupply: 500,
                 treasuryAccountId: owner.accountId,
-                treasuryKey: owner.key,
-                supplyKey: owner.key,
+                supplyKey: owner.key.publicKey,
+                additionalSigners: [owner.key],
             });
 
-            await tokenService.associateToken(
+            await tokenService.associateToken({
                 tokenId,
-                spender.accountId,
-                spender.key,
-            );
+                accountId: spender.accountId,
+                additionalSigners: [spender.key],
+            });
 
             await client.transferToken(
                 tokenId,
@@ -186,27 +184,27 @@ describe("TransferOperation [Integration]", () => {
 
     describe("transferNft", () => {
         it("transfers an NFT from the operator to a recipient", async () => {
-            const tokenId = await nftService.createNftType({
-                name: "Transfer Test NFT",
-                symbol: "TNFT",
+            const tokenId = await tokenService.createNft({
+                tokenName: "Transfer Test NFT",
+                tokenSymbol: "TNFT",
                 treasuryAccountId: operatorAccountId,
-                treasuryKey: operatorKey,
-                supplyKey: operatorKey,
+                supplyKey: operatorKey.publicKey,
+                additionalSigners: [operatorKey],
             });
 
-            const serials = await nftService.mintNfts(
+            await tokenService.mintToken({
                 tokenId,
-                [Buffer.from("meta-1")],
-                operatorKey,
-            );
-            const serial = serials[0];
+                metadata: [Buffer.from("meta-1")],
+                additionalSigners: [operatorKey],
+            });
+            const serial = 1;
 
             const receiver = await createTestAccount(client, 1);
-            await tokenService.associateToken(
+            await tokenService.associateToken({
                 tokenId,
-                receiver.accountId,
-                receiver.key,
-            );
+                accountId: receiver.accountId,
+                additionalSigners: [receiver.key],
+            });
 
             await client.transferNft(
                 tokenId,

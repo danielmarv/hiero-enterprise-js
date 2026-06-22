@@ -12,8 +12,7 @@ import type {
     MirrorTransactionListResponse,
 } from "../types/index.js";
 
-// ─── Top-level response assertions ──────────────────────────────
-
+// Top-level response assertions
 export function assertPageResponse(
     raw: unknown,
     path: string,
@@ -105,8 +104,7 @@ export function assertNetworkStakeResponse(
     assertField(raw, "max_stake_rewarded", "number", path);
 }
 
-// ─── Primitive assertions ────────────────────────────────────────
-
+// Primitive assertions
 function assertObject(
     value: unknown,
     path: string,

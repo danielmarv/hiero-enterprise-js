@@ -16,10 +16,10 @@
 import {
     AccountService,
     AccountType,
-    NftService,
     HieroContext,
     PrivateKey,
     Hbar,
+    TokenService,
 } from "@hiero-enterprise/core";
 import { getED25519Config } from "../env.js";
 
@@ -88,7 +88,7 @@ async function approveHbarAllowance(accountService: AccountService) {
  */
 async function approveNftAllowanceBySerials(
     accountService: AccountService,
-    nftService: NftService,
+    tokenService: TokenService,
 ) {
     console.log("=== NFT Allowance (Specific Serials) ===\n");
 
@@ -115,25 +115,25 @@ async function approveNftAllowanceBySerials(
     // Create an NFT collection and mint 3 serials.
     // The owner is the treasury so minted NFTs go directly to the owner account.
 
-    const tokenId = await nftService.createNftType({
-        name: "Serial Allowance NFT",
-        symbol: "SANFT",
+    const tokenId = await tokenService.createNft({
+        tokenName: "Serial Allowance NFT",
+        tokenSymbol: "SANFT",
         treasuryAccountId: owner.accountId,
-        treasuryKey: ownerKey,
-        supplyKey: ownerKey,
+        supplyKey: ownerKey.publicKey,
+        additionalSigners: [ownerKey],
     });
     console.log("Created NFT collection:", tokenId);
 
-    const serials = await nftService.mintNfts(
+    await tokenService.mintToken({
         tokenId,
-        [
+        metadata: [
             Buffer.from("metadata-1"),
             Buffer.from("metadata-2"),
             Buffer.from("metadata-3"),
         ],
-        ownerKey,
-    );
-    console.log("Minted serials:", serials);
+        additionalSigners: [ownerKey],
+    });
+    console.log("Minted serials: [1, 2, 3]");
 
     // Approve the spender for only serials 1 and 2.
     // The spender will NOT have permission to transfer serial 3.
@@ -176,7 +176,7 @@ async function approveNftAllowanceBySerials(
  */
 async function approveNftWithDelegatingSpender(
     accountService: AccountService,
-    nftService: NftService,
+    tokenService: TokenService,
 ) {
     console.log("=== NFT Delegating Spender ===\n");
 
@@ -218,20 +218,24 @@ async function approveNftWithDelegatingSpender(
     // Create an NFT collection and mint serials for the demo.
     // The owner is the treasury so minted NFTs go directly to the owner account.
 
-    const tokenId = await nftService.createNftType({
-        name: "Delegation Demo NFT",
-        symbol: "DDNFT",
+    const tokenId = await tokenService.createNft({
+        tokenName: "Delegation Demo NFT",
+        tokenSymbol: "DDNFT",
         treasuryAccountId: owner.accountId,
-        treasuryKey: ownerKey,
-        supplyKey: ownerKey,
+        supplyKey: ownerKey.publicKey,
+        additionalSigners: [ownerKey],
     });
     console.log("Created NFT collection:", tokenId);
 
-    await nftService.mintNfts(
+    await tokenService.mintToken({
         tokenId,
-        [Buffer.from("nft-a"), Buffer.from("nft-b"), Buffer.from("nft-c")],
-        ownerKey,
-    );
+        metadata: [
+            Buffer.from("nft-a"),
+            Buffer.from("nft-b"),
+            Buffer.from("nft-c"),
+        ],
+        additionalSigners: [ownerKey],
+    });
     console.log("Minted serials: [1, 2, 3]");
 
     // Grant approved-for-all to the primary spender.
@@ -289,11 +293,11 @@ async function approveNftWithDelegatingSpender(
 async function main() {
     const context = new HieroContext(getED25519Config());
     const accountService = new AccountService(context);
-    const nftService = new NftService(context);
+    const tokenService = new TokenService(context);
 
     await approveHbarAllowance(accountService);
-    await approveNftAllowanceBySerials(accountService, nftService);
-    await approveNftWithDelegatingSpender(accountService, nftService);
+    await approveNftAllowanceBySerials(accountService, tokenService);
+    await approveNftWithDelegatingSpender(accountService, tokenService);
 
     console.log("All allowance scenarios complete.");
     context.client.close();

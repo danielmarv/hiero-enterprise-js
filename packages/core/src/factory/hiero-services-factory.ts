@@ -4,17 +4,16 @@ import { HieroContext } from "../context/index.js";
 import { MirrorNodeClient } from "../mirror/index.js";
 import {
     AccountRepository,
-    NftRepository,
     TokenRepository,
     TopicRepository,
     TransactionRepository,
     NetworkRepository,
+    NftRepository,
 } from "../repositories/index.js";
 import {
     AccountService,
     FileService,
-    FungibleTokenService,
-    NftService,
+    TokenService,
     SmartContractService,
     TopicService,
     ScheduleService,
@@ -46,8 +45,7 @@ export function createHieroRuntime(config?: HieroConfig): HieroRuntime {
         accountService: new AccountService(context),
         scheduleService: new ScheduleService(context),
         fileService: new FileService(context),
-        fungibleTokenService: new FungibleTokenService(context),
-        nftService: new NftService(context),
+        tokenService: new TokenService(context),
         smartContractService: new SmartContractService(context),
         topicService: new TopicService(context),
         accountRepository: new AccountRepository(mirrorNodeClient),
