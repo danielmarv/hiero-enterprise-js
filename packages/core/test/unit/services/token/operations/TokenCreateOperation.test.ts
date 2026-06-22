@@ -6,6 +6,7 @@ import {
     PrivateKey,
 } from "@hiero-ledger/sdk";
 import { TokenService } from "../../../../../src/services/token/index.js";
+import { TokenCreateOperation } from "../../../../../src/services/token/operations/index.js";
 import { createMockContext } from "../../../../utils/mock-context.js";
 import { reattachMockChain } from "../../../../utils/sdk-mocks.js";
 import type { IHieroContext } from "../../../../../src/context/index.js";
@@ -295,6 +296,24 @@ describe("TokenCreateOperation (via TokenService)", () => {
             expect(mocks.tx.schedule).toHaveBeenCalled();
             expect(result.scheduleId).toBe("0.0.777");
             expect(result.transactionId).toBeDefined();
+        });
+    });
+
+    describe("TokenCreateOperation (direct usage)", () => {
+        it("skips setTokenType when tokenType is omitted", async () => {
+            // The high-level TokenService always sets tokenType, but the
+            // low-level TokenCreateOperation can be invoked directly and
+            // must omit setTokenType when tokenType is not provided.
+            const operation = new TokenCreateOperation(context);
+
+            await operation.execute({
+                tokenName: "Acme",
+                tokenSymbol: "ACME",
+                treasuryAccountId: "0.0.555",
+            });
+
+            const tx = vi.mocked(TokenCreateTransaction).mock.results[0].value;
+            expect(tx.setTokenType).not.toHaveBeenCalled();
         });
     });
 });
