@@ -28,10 +28,6 @@ describe("TokenBurnOperation (via TokenService)", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         reattachMockChain(mocks);
-        // Ensure the mock receipt carries a `totalSupply` so burn's
-        // extractor doesn't throw.
-        mocks.receipt.totalSupply = { toString: () => "1000" };
-        mocks.response.getReceipt.mockResolvedValue(mocks.receipt);
         context = createMockContext();
         service = new TokenService(context);
     });
@@ -105,6 +101,21 @@ describe("TokenBurnOperation (via TokenService)", () => {
         });
 
         expect(totalSupply).toBe(mocks.receipt.totalSupply);
+    });
+
+    it("throws when the receipt is missing totalSupply", async () => {
+        // Simulate a malformed receipt with no `totalSupply` field.
+        mocks.response.getReceipt.mockResolvedValueOnce({
+            ...mocks.receipt,
+            totalSupply: null,
+        });
+
+        await expect(
+            service.burnToken({
+                tokenId: "0.0.500",
+                amount: 10,
+            }),
+        ).rejects.toThrow(/TokenBurn receipt did not include totalSupply/);
     });
 
     it("throws when both amount and serials are missing", async () => {
