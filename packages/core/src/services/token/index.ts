@@ -4,6 +4,7 @@ export type {
     CreateNftOptions,
     MintTokenOptions,
     AssociateTokenOptions,
+    UpdateTokenOptions,
 } from "./TokenService.js";
 export type {
     TokenCreateOperationOptions,

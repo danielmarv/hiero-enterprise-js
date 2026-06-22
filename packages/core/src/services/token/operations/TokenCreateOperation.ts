@@ -98,7 +98,7 @@ export class TokenCreateOperation {
             {
                 type: "TokenCreate",
                 serviceName: "TokenService",
-                methodName: "scheduleCreateToken",
+                methodName: "createToken",
                 timestamp: new Date(),
             },
             scheduleOptions,
