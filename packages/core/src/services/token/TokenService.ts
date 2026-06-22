@@ -11,12 +11,14 @@ import {
     TokenMintOperation,
     TokenAssociateOperation,
     TokenUpdateOperation,
+    TokenDeleteOperation,
 } from "./operations/index.js";
 import type {
     TokenCreateOperationOptions,
     TokenMintOperationOptions,
     TokenAssociateOperationOptions,
     TokenUpdateOperationOptions,
+    TokenDeleteOperationOptions,
 } from "./operations/index.js";
 
 /**
@@ -63,6 +65,9 @@ export type AssociateTokenOptions = TokenAssociateOperationOptions;
 /** Options for updating an existing token's mutable properties. */
 export type UpdateTokenOptions = TokenUpdateOperationOptions;
 
+/** Options for deleting an existing token. */
+export type DeleteTokenOptions = TokenDeleteOperationOptions;
+
 /**
  * Service for managing native tokens on the Hiero network (HTS) — covers
  * both fungible tokens and non-fungible token (NFT) collections via a
@@ -73,12 +78,14 @@ export class TokenService {
     private readonly mintOperation: TokenMintOperation;
     private readonly associateOperation: TokenAssociateOperation;
     private readonly updateOperation: TokenUpdateOperation;
+    private readonly deleteOperation: TokenDeleteOperation;
 
     constructor(private readonly context: IHieroContext) {
         this.createOperation = new TokenCreateOperation(context);
         this.mintOperation = new TokenMintOperation(context);
         this.associateOperation = new TokenAssociateOperation(context);
         this.updateOperation = new TokenUpdateOperation(context);
+        this.deleteOperation = new TokenDeleteOperation(context);
     }
 
     /**
@@ -344,6 +351,23 @@ export class TokenService {
         scheduleOptions?: ScheduleOptions,
     ): Promise<ScheduledResult> {
         return await this.updateOperation.schedule(options, scheduleOptions);
+    }
+
+    /**
+     * Delete an existing token.
+     *
+     * Marks the token as deleted on the network. The token must have an
+     * admin key, and that admin key must sign the transaction — supply it
+     * via `additionalSigners`. Once deleted, the token cannot be used for
+     * any operation (transfers, mints, associations, etc.).
+     *
+     * Note: `TokenDelete` is not whitelisted for scheduling on the network,
+     * so no scheduled variant is exposed.
+     *
+     * @param options.tokenId - Token to delete
+     */
+    async deleteToken(options: DeleteTokenOptions): Promise<void> {
+        return await this.deleteOperation.execute(options);
     }
 
     private buildFungibleOperationOptions(
