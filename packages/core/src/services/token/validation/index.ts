@@ -6,3 +6,4 @@ export { TokenAssociateValidator } from "./TokenAssociateValidator.js";
 export { TokenDissociateValidator } from "./TokenDissociateValidator.js";
 export { TokenUpdateValidator } from "./TokenUpdateValidator.js";
 export { TokenDeleteValidator } from "./TokenDeleteValidator.js";
+export { TokenFreezeValidator } from "./TokenFreezeValidator.js";

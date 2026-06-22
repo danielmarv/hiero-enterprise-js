@@ -30,3 +30,7 @@ export {
     TokenDeleteOperation,
     type TokenDeleteOperationOptions,
 } from "./TokenDeleteOperation.js";
+export {
+    TokenFreezeOperation,
+    type TokenFreezeOperationOptions,
+} from "./TokenFreezeOperation.js";
