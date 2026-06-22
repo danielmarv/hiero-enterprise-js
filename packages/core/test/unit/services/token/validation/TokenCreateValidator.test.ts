@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { TokenType, TokenSupplyType } from "@hiero-ledger/sdk";
+import { TokenType, TokenSupplyType, Long } from "@hiero-ledger/sdk";
+import BigNumber from "bignumber.js";
 import { TokenCreateValidator } from "../../../../../src/services/token/validation/index.js";
 import type { TokenCreateOperationOptions } from "../../../../../src/services/token/operations/index.js";
 
@@ -154,6 +155,62 @@ describe("TokenCreateValidator", () => {
                 }),
             ).not.toThrow();
         });
+
+        it("throws when initialSupply is a negative Long", () => {
+            expect(() =>
+                validator.validate({
+                    ...baseOptions,
+                    initialSupply: Long.fromNumber(-1),
+                }),
+            ).toThrow(/initialSupply cannot be negative/);
+        });
+
+        it("throws when maxSupply is a negative Long", () => {
+            expect(() =>
+                validator.validate({
+                    ...baseOptions,
+                    maxSupply: Long.fromNumber(-1),
+                }),
+            ).toThrow(/maxSupply cannot be negative/);
+        });
+
+        it("throws when initialSupply is a negative BigNumber", () => {
+            expect(() =>
+                validator.validate({
+                    ...baseOptions,
+                    initialSupply: new BigNumber(-1),
+                }),
+            ).toThrow(/initialSupply cannot be negative/);
+        });
+
+        it("throws when maxSupply is a negative BigNumber", () => {
+            expect(() =>
+                validator.validate({
+                    ...baseOptions,
+                    maxSupply: new BigNumber(-1),
+                }),
+            ).toThrow(/maxSupply cannot be negative/);
+        });
+
+        it("allows positive Long values", () => {
+            expect(() =>
+                validator.validate({
+                    ...baseOptions,
+                    initialSupply: Long.fromNumber(100),
+                    maxSupply: Long.fromNumber(1000),
+                }),
+            ).not.toThrow();
+        });
+
+        it("allows positive BigNumber values", () => {
+            expect(() =>
+                validator.validate({
+                    ...baseOptions,
+                    initialSupply: new BigNumber(100),
+                    maxSupply: new BigNumber(1000),
+                }),
+            ).not.toThrow();
+        });
     });
 
     describe("tokenMemo", () => {
@@ -202,6 +259,26 @@ describe("TokenCreateValidator", () => {
                     ...baseOptions,
                     supplyType: TokenSupplyType.Finite,
                     maxSupply: 0n,
+                }),
+            ).toThrow(/maxSupply must be greater than 0/);
+        });
+
+        it("throws when supplyType is Finite and maxSupply is a zero Long", () => {
+            expect(() =>
+                validator.validate({
+                    ...baseOptions,
+                    supplyType: TokenSupplyType.Finite,
+                    maxSupply: Long.ZERO,
+                }),
+            ).toThrow(/maxSupply must be greater than 0/);
+        });
+
+        it("throws when supplyType is Finite and maxSupply is a zero BigNumber", () => {
+            expect(() =>
+                validator.validate({
+                    ...baseOptions,
+                    supplyType: TokenSupplyType.Finite,
+                    maxSupply: new BigNumber(0),
                 }),
             ).toThrow(/maxSupply must be greater than 0/);
         });
@@ -280,6 +357,34 @@ describe("TokenCreateValidator", () => {
             expect(() =>
                 validator.validate({ ...nftOptions, initialSupply: 1n }),
             ).toThrow(/Non-fungible tokens must have initialSupply: 0/);
+        });
+
+        it("throws when initialSupply is non-zero Long for NFTs", () => {
+            expect(() =>
+                validator.validate({
+                    ...nftOptions,
+                    initialSupply: Long.fromNumber(1),
+                }),
+            ).toThrow(/Non-fungible tokens must have initialSupply: 0/);
+        });
+
+        it("throws when decimals is non-zero BigNumber for NFTs", () => {
+            expect(() =>
+                validator.validate({
+                    ...nftOptions,
+                    decimals: new BigNumber(2),
+                }),
+            ).toThrow(/Non-fungible tokens must have decimals: 0/);
+        });
+
+        it("passes with zero Long for decimals/initialSupply on NFTs", () => {
+            expect(() =>
+                validator.validate({
+                    ...nftOptions,
+                    decimals: Long.ZERO,
+                    initialSupply: Long.ZERO,
+                }),
+            ).not.toThrow();
         });
 
         it("does not enforce NFT constraints for fungible tokens", () => {

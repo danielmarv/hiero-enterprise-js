@@ -22,11 +22,10 @@ function isNegative(
 
 /**
  * Check if a numeric value equals zero across all supported types.
+ *
+ * Assumes a non-null value; callers must null-check first.
  */
-function isZero(
-    value: number | bigint | Long | BigNumber | undefined,
-): boolean {
-    if (value == null) return false;
+function isZero(value: number | bigint | Long | BigNumber): boolean {
     if (typeof value === "number") return value === 0;
     if (typeof value === "bigint") return value === 0n;
     if (Long.isLong(value)) return value.isZero();
@@ -35,15 +34,14 @@ function isZero(
 
 /**
  * Check if a numeric value is positive (> 0) across all supported types.
+ *
+ * Assumes a non-null value; callers must null-check first.
  */
-function isPositive(
-    value: number | bigint | Long | BigNumber | undefined,
-): boolean {
-    if (value == null) return false;
+function isPositive(value: number | bigint | Long | BigNumber): boolean {
     if (typeof value === "number") return value > 0;
     if (typeof value === "bigint") return value > 0n;
-    if (Long.isLong(value)) return value.isPositive();
-    return (value as BigNumber).isPositive();
+    if (Long.isLong(value)) return value.greaterThan(0);
+    return (value as BigNumber).isGreaterThan(0);
 }
 
 /**

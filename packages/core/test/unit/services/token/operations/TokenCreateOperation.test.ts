@@ -167,6 +167,24 @@ describe("TokenCreateOperation (via TokenService)", () => {
             expect(tx.setCustomFees).not.toHaveBeenCalled();
         });
 
+        it("calls setCustomFees when a non-empty fee array is provided", async () => {
+            const customFees = [
+                { _placeholder: "fee" },
+            ] as unknown as Parameters<
+                typeof service.createFungibleToken
+            >[0]["customFees"];
+
+            await service.createFungibleToken({
+                tokenName: "Acme",
+                tokenSymbol: "ACME",
+                treasuryAccountId: "0.0.555",
+                customFees,
+            });
+
+            const tx = vi.mocked(TokenCreateTransaction).mock.results[0].value;
+            expect(tx.setCustomFees).toHaveBeenCalledWith(customFees);
+        });
+
         it("applies base TransactionOptions to the transaction", async () => {
             await service.createFungibleToken({
                 tokenName: "Acme",
