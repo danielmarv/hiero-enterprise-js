@@ -126,6 +126,34 @@ describe("TokenCreateValidator", () => {
                 }),
             ).not.toThrow();
         });
+
+        it("throws when initialSupply is negative bigint", () => {
+            expect(() =>
+                validator.validate({
+                    ...baseOptions,
+                    initialSupply: -1n,
+                }),
+            ).toThrow(/initialSupply cannot be negative/);
+        });
+
+        it("throws when maxSupply is negative bigint", () => {
+            expect(() =>
+                validator.validate({
+                    ...baseOptions,
+                    maxSupply: -1n,
+                }),
+            ).toThrow(/maxSupply cannot be negative/);
+        });
+
+        it("allows zero bigint values", () => {
+            expect(() =>
+                validator.validate({
+                    ...baseOptions,
+                    initialSupply: 0n,
+                    maxSupply: 0n,
+                }),
+            ).not.toThrow();
+        });
     });
 
     describe("tokenMemo", () => {
@@ -164,6 +192,16 @@ describe("TokenCreateValidator", () => {
                     ...baseOptions,
                     supplyType: TokenSupplyType.Finite,
                     maxSupply: 0,
+                }),
+            ).toThrow(/maxSupply must be greater than 0/);
+        });
+
+        it("throws when supplyType is Finite and maxSupply is 0n (bigint)", () => {
+            expect(() =>
+                validator.validate({
+                    ...baseOptions,
+                    supplyType: TokenSupplyType.Finite,
+                    maxSupply: 0n,
                 }),
             ).toThrow(/maxSupply must be greater than 0/);
         });
@@ -207,6 +245,16 @@ describe("TokenCreateValidator", () => {
             ).not.toThrow();
         });
 
+        it("passes when decimals/initialSupply are 0n (bigint)", () => {
+            expect(() =>
+                validator.validate({
+                    ...nftOptions,
+                    decimals: 0n,
+                    initialSupply: 0n,
+                }),
+            ).not.toThrow();
+        });
+
         it("throws when supplyKey is missing for NFTs", () => {
             expect(() =>
                 validator.validate({
@@ -225,6 +273,12 @@ describe("TokenCreateValidator", () => {
         it("throws when initialSupply is non-zero for NFTs", () => {
             expect(() =>
                 validator.validate({ ...nftOptions, initialSupply: 5 }),
+            ).toThrow(/Non-fungible tokens must have initialSupply: 0/);
+        });
+
+        it("throws when initialSupply is non-zero bigint for NFTs", () => {
+            expect(() =>
+                validator.validate({ ...nftOptions, initialSupply: 1n }),
             ).toThrow(/Non-fungible tokens must have initialSupply: 0/);
         });
 

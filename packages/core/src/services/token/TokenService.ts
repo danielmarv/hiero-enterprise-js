@@ -1,4 +1,9 @@
-import { TokenType, TokenSupplyType, type Key } from "@hiero-ledger/sdk";
+import {
+    TokenType,
+    TokenSupplyType,
+    type Key,
+    type Long,
+} from "@hiero-ledger/sdk";
 import type { IHieroContext } from "../../context/index.js";
 import type { ScheduleOptions, ScheduledResult } from "../transaction/index.js";
 import {
@@ -156,7 +161,7 @@ export class TokenService {
      *
      * `decimals` and `initialSupply` are forced to `0` and `tokenType` is set
      * to `NonFungibleUnique`. Mint individual NFTs after creation using the
-     * supply key (a future `mintNft` operation).
+     * supply key via `mintToken`.
      *
      * @param options.tokenName - Collection name (max 100 bytes)
      * @param options.tokenSymbol - Collection symbol (max 100 bytes)
@@ -238,8 +243,9 @@ export class TokenService {
      * @param options.tokenId - Token to mint additional supply for
      * @param options.amount - Fungible amount to mint
      * @param options.metadata - NFT metadata entries to mint, one per new serial
+     * @returns For NFT mints, the serials of minted NFTs; empty array for fungible mints
      */
-    async mintToken(options: MintTokenOptions): Promise<void> {
+    async mintToken(options: MintTokenOptions): Promise<Long[]> {
         return await this.mintOperation.execute(options);
     }
 

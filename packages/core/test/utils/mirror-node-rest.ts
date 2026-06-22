@@ -37,7 +37,7 @@ export interface MirrorNftRecord {
 
 export interface MirrorAccountToken {
     token_id: string;
-    balance: number;
+    balance: string;
     decimals?: number;
 }
 

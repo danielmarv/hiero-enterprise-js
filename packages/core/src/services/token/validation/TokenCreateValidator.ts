@@ -1,10 +1,50 @@
-import { TokenType, TokenSupplyType } from "@hiero-ledger/sdk";
+import type BigNumber from "bignumber.js";
+import { TokenType, TokenSupplyType, Long } from "@hiero-ledger/sdk";
 import { normalizeError } from "../../../errors/index.js";
 import type { TokenCreateOperationOptions } from "../operations/TokenCreateOperation.js";
 
 const MAX_TOKEN_NAME_BYTES = 100;
 const MAX_TOKEN_SYMBOL_BYTES = 100;
 const MAX_TOKEN_MEMO_BYTES = 100;
+
+/**
+ * Check if a numeric value is negative across all supported types.
+ */
+function isNegative(
+    value: number | bigint | Long | BigNumber | undefined,
+): boolean {
+    if (value == null) return false;
+    if (typeof value === "number") return value < 0;
+    if (typeof value === "bigint") return value < 0n;
+    if (Long.isLong(value)) return value.isNegative();
+    return (value as BigNumber).isNegative();
+}
+
+/**
+ * Check if a numeric value equals zero across all supported types.
+ */
+function isZero(
+    value: number | bigint | Long | BigNumber | undefined,
+): boolean {
+    if (value == null) return false;
+    if (typeof value === "number") return value === 0;
+    if (typeof value === "bigint") return value === 0n;
+    if (Long.isLong(value)) return value.isZero();
+    return (value as BigNumber).isZero();
+}
+
+/**
+ * Check if a numeric value is positive (> 0) across all supported types.
+ */
+function isPositive(
+    value: number | bigint | Long | BigNumber | undefined,
+): boolean {
+    if (value == null) return false;
+    if (typeof value === "number") return value > 0;
+    if (typeof value === "bigint") return value > 0n;
+    if (Long.isLong(value)) return value.isPositive();
+    return (value as BigNumber).isPositive();
+}
 
 /**
  * Validates `TokenCreateOperationOptions` before they reach the SDK.
@@ -87,24 +127,21 @@ export class TokenCreateValidator {
     }
 
     private validateNumericRanges(options: TokenCreateOperationOptions): void {
-        if (typeof options.decimals === "number" && options.decimals < 0) {
+        if (isNegative(options.decimals)) {
             throw normalizeError(
                 new Error("decimals cannot be negative."),
                 "TokenCreateValidator",
             );
         }
 
-        if (
-            typeof options.initialSupply === "number" &&
-            options.initialSupply < 0
-        ) {
+        if (isNegative(options.initialSupply)) {
             throw normalizeError(
                 new Error("initialSupply cannot be negative."),
                 "TokenCreateValidator",
             );
         }
 
-        if (typeof options.maxSupply === "number" && options.maxSupply < 0) {
+        if (isNegative(options.maxSupply)) {
             throw normalizeError(
                 new Error("maxSupply cannot be negative."),
                 "TokenCreateValidator",
@@ -138,7 +175,7 @@ export class TokenCreateValidator {
             );
         }
 
-        if (typeof options.maxSupply === "number" && options.maxSupply <= 0) {
+        if (!isPositive(options.maxSupply)) {
             throw normalizeError(
                 new Error(
                     "maxSupply must be greater than 0 for finite supply.",
@@ -160,17 +197,14 @@ export class TokenCreateValidator {
             );
         }
 
-        if (typeof options.decimals === "number" && options.decimals !== 0) {
+        if (options.decimals != null && !isZero(options.decimals)) {
             throw normalizeError(
                 new Error("Non-fungible tokens must have decimals: 0."),
                 "TokenCreateValidator",
             );
         }
 
-        if (
-            typeof options.initialSupply === "number" &&
-            options.initialSupply !== 0
-        ) {
+        if (options.initialSupply != null && !isZero(options.initialSupply)) {
             throw normalizeError(
                 new Error("Non-fungible tokens must have initialSupply: 0."),
                 "TokenCreateValidator",

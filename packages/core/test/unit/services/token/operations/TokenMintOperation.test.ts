@@ -104,6 +104,18 @@ describe("TokenMintOperation (via TokenService)", () => {
         ).rejects.toThrow(/requires either amount \(fungible\) or metadata/i);
     });
 
+    it("throws when both amount and metadata are provided", async () => {
+        const metadata = [new Uint8Array([1, 2, 3])];
+
+        await expect(
+            service.mintToken({
+                tokenId: "0.0.500",
+                amount: 100,
+                metadata,
+            }),
+        ).rejects.toThrow(/requires either amount \(fungible\) or metadata/i);
+    });
+
     it("throws when tokenId is empty", async () => {
         await expect(
             service.mintToken({

@@ -1,3 +1,5 @@
+import type BigNumber from "bignumber.js";
+import { Long } from "@hiero-ledger/sdk";
 import { normalizeError } from "../../../errors/index.js";
 import type { TokenMintOperationOptions } from "../operations/TokenMintOperation.js";
 
@@ -44,10 +46,33 @@ export class TokenMintValidator {
                 "TokenMintValidator",
             );
         }
+
+        if (hasAmount && hasMetadata) {
+            throw normalizeError(
+                new Error(
+                    "Token mint requires either amount (fungible) or metadata (NFT).",
+                ),
+                "TokenMintValidator",
+            );
+        }
     }
 
     private validateAmount(options: TokenMintOperationOptions): void {
-        if (typeof options.amount === "number" && options.amount < 0) {
+        if (options.amount == null) return;
+
+        let isNegative;
+        if (typeof options.amount === "number") {
+            isNegative = options.amount < 0;
+        } else if (typeof options.amount === "bigint") {
+            isNegative = options.amount < 0n;
+        } else if (Long.isLong(options.amount)) {
+            isNegative = options.amount.isNegative();
+        } else {
+            // BigNumber
+            isNegative = (options.amount as BigNumber).isNegative();
+        }
+
+        if (isNegative) {
             throw normalizeError(
                 new Error("amount cannot be negative."),
                 "TokenMintValidator",

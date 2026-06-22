@@ -31,7 +31,7 @@ export class TokenMintOperation {
     }
 
     /** Submit a `TokenMintTransaction`. */
-    async execute(options: TokenMintOperationOptions): Promise<void> {
+    async execute(options: TokenMintOperationOptions): Promise<Long[]> {
         this.validator.validate(options);
 
         const tx = this.build(options);
@@ -45,7 +45,7 @@ export class TokenMintOperation {
                 methodName: "mintToken",
                 timestamp: new Date(),
             },
-            () => undefined,
+            (receipt) => receipt.serials,
         );
     }
 
