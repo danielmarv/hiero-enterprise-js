@@ -10,6 +10,12 @@ export type {
     UpdateTokenOptions,
     DeleteTokenOptions,
     FreezeTokenOptions,
+    UnfreezeTokenOptions,
+    GrantKycTokenOptions,
+    RevokeKycTokenOptions,
+    PauseTokenOptions,
+    UnpauseTokenOptions,
+    UpdateTokenFeeScheduleOptions,
 } from "./TokenService.js";
 export type {
     TokenCreateOperationOptions,
@@ -21,4 +27,10 @@ export type {
     TokenUpdateOperationOptions,
     TokenDeleteOperationOptions,
     TokenFreezeOperationOptions,
+    TokenUnfreezeOperationOptions,
+    TokenGrantKycOperationOptions,
+    TokenRevokeKycOperationOptions,
+    TokenPauseOperationOptions,
+    TokenUnpauseOperationOptions,
+    TokenFeeScheduleUpdateOperationOptions,
 } from "./operations/index.js";

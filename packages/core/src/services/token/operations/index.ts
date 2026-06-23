@@ -34,3 +34,27 @@ export {
     TokenFreezeOperation,
     type TokenFreezeOperationOptions,
 } from "./TokenFreezeOperation.js";
+export {
+    TokenUnfreezeOperation,
+    type TokenUnfreezeOperationOptions,
+} from "./TokenUnfreezeOperation.js";
+export {
+    TokenGrantKycOperation,
+    type TokenGrantKycOperationOptions,
+} from "./TokenGrantKycOperation.js";
+export {
+    TokenRevokeKycOperation,
+    type TokenRevokeKycOperationOptions,
+} from "./TokenRevokeKycOperation.js";
+export {
+    TokenPauseOperation,
+    type TokenPauseOperationOptions,
+} from "./TokenPauseOperation.js";
+export {
+    TokenUnpauseOperation,
+    type TokenUnpauseOperationOptions,
+} from "./TokenUnpauseOperation.js";
+export {
+    TokenFeeScheduleUpdateOperation,
+    type TokenFeeScheduleUpdateOperationOptions,
+} from "./TokenFeeScheduleUpdateOperation.js";
