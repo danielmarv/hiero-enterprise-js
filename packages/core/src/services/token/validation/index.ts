@@ -7,3 +7,4 @@ export { TokenDissociateValidator } from "./TokenDissociateValidator.js";
 export { TokenUpdateValidator } from "./TokenUpdateValidator.js";
 export { TokenDeleteValidator } from "./TokenDeleteValidator.js";
 export { TokenFreezeValidator } from "./TokenFreezeValidator.js";
+export { TokenUnfreezeValidator } from "./TokenUnfreezeValidator.js";
