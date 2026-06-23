@@ -34,3 +34,7 @@ export {
     TokenFreezeOperation,
     type TokenFreezeOperationOptions,
 } from "./TokenFreezeOperation.js";
+export {
+    TokenUnfreezeOperation,
+    type TokenUnfreezeOperationOptions,
+} from "./TokenUnfreezeOperation.js";

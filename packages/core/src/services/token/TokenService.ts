@@ -16,6 +16,7 @@ import {
     TokenUpdateOperation,
     TokenDeleteOperation,
     TokenFreezeOperation,
+    TokenUnfreezeOperation,
 } from "./operations/index.js";
 import type {
     TokenCreateOperationOptions,
@@ -27,6 +28,7 @@ import type {
     TokenUpdateOperationOptions,
     TokenDeleteOperationOptions,
     TokenFreezeOperationOptions,
+    TokenUnfreezeOperationOptions,
 } from "./operations/index.js";
 
 /**
@@ -88,6 +90,9 @@ export type DeleteTokenOptions = TokenDeleteOperationOptions;
 /** Options for freezing a token relationship on a specific account. */
 export type FreezeTokenOptions = TokenFreezeOperationOptions;
 
+/** Options for unfreezing a previously frozen token relationship on a specific account. */
+export type UnfreezeTokenOptions = TokenUnfreezeOperationOptions;
+
 /**
  * Service for managing native tokens on the Hiero network (HTS) — covers
  * both fungible tokens and non-fungible token (NFT) collections via a
@@ -103,6 +108,7 @@ export class TokenService {
     private readonly updateOperation: TokenUpdateOperation;
     private readonly deleteOperation: TokenDeleteOperation;
     private readonly freezeOperation: TokenFreezeOperation;
+    private readonly unfreezeOperation: TokenUnfreezeOperation;
 
     constructor(private readonly context: IHieroContext) {
         this.createOperation = new TokenCreateOperation(context);
@@ -114,6 +120,7 @@ export class TokenService {
         this.updateOperation = new TokenUpdateOperation(context);
         this.deleteOperation = new TokenDeleteOperation(context);
         this.freezeOperation = new TokenFreezeOperation(context);
+        this.unfreezeOperation = new TokenUnfreezeOperation(context);
     }
 
     /**
@@ -512,6 +519,24 @@ export class TokenService {
      */
     async freezeToken(options: FreezeTokenOptions): Promise<void> {
         return await this.freezeOperation.execute(options);
+    }
+
+    /**
+     * Unfreeze a previously frozen token relationship on a specific account.
+     *
+     * Restores the target account's ability to send and receive the given
+     * token after a prior freeze. The token's freeze key must sign —
+     * supply it via `additionalSigners`. The target account must already
+     * be associated with the token.
+     *
+     * Note: `TokenUnfreeze` is not whitelisted for scheduling on the
+     * network, so no scheduled variant is exposed.
+     *
+     * @param options.tokenId - Token whose relationship will be unfrozen
+     * @param options.accountId - Account whose relationship will be unfrozen
+     */
+    async unfreezeToken(options: UnfreezeTokenOptions): Promise<void> {
+        return await this.unfreezeOperation.execute(options);
     }
 
     private buildFungibleOperationOptions(
