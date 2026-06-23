@@ -55,6 +55,7 @@ export interface MirrorTokenInfo {
     supply_type?: string;
     total_supply?: string;
     deleted?: boolean;
+    pause_status?: "NOT_APPLICABLE" | "PAUSED" | "UNPAUSED";
 }
 
 async function getJson<T>(url: string): Promise<T> {
