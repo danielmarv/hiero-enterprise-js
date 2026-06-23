@@ -13,6 +13,16 @@ export type {
 } from "./token.js";
 export type { Nft, NftMetadata } from "./nft.js";
 export type { ContractCallResult } from "./contract.js";
+export type {
+    FileAppendOptions,
+    FileChunkOptions,
+    FileContents,
+    FileCreateOptions,
+    FileDeleteOptions,
+    FileIdLike,
+    FileInfo,
+    FileUpdateOptions,
+} from "./file.js";
 export type { MirrorTopic, MirrorTopicMessage } from "./topic.js";
 export type {
     TransactionInfo,
