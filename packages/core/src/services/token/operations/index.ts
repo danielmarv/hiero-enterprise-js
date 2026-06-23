@@ -46,3 +46,7 @@ export {
     TokenRevokeKycOperation,
     type TokenRevokeKycOperationOptions,
 } from "./TokenRevokeKycOperation.js";
+export {
+    TokenPauseOperation,
+    type TokenPauseOperationOptions,
+} from "./TokenPauseOperation.js";

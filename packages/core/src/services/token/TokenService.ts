@@ -19,6 +19,7 @@ import {
     TokenUnfreezeOperation,
     TokenGrantKycOperation,
     TokenRevokeKycOperation,
+    TokenPauseOperation,
 } from "./operations/index.js";
 import type {
     TokenCreateOperationOptions,
@@ -33,6 +34,7 @@ import type {
     TokenUnfreezeOperationOptions,
     TokenGrantKycOperationOptions,
     TokenRevokeKycOperationOptions,
+    TokenPauseOperationOptions,
 } from "./operations/index.js";
 
 /**
@@ -103,6 +105,9 @@ export type GrantKycTokenOptions = TokenGrantKycOperationOptions;
 /** Options for revoking KYC approval on a token relationship for a specific account. */
 export type RevokeKycTokenOptions = TokenRevokeKycOperationOptions;
 
+/** Options for pausing a token network-wide. */
+export type PauseTokenOptions = TokenPauseOperationOptions;
+
 /**
  * Service for managing native tokens on the Hiero network (HTS) — covers
  * both fungible tokens and non-fungible token (NFT) collections via a
@@ -121,6 +126,7 @@ export class TokenService {
     private readonly unfreezeOperation: TokenUnfreezeOperation;
     private readonly grantKycOperation: TokenGrantKycOperation;
     private readonly revokeKycOperation: TokenRevokeKycOperation;
+    private readonly pauseOperation: TokenPauseOperation;
 
     constructor(private readonly context: IHieroContext) {
         this.createOperation = new TokenCreateOperation(context);
@@ -135,6 +141,7 @@ export class TokenService {
         this.unfreezeOperation = new TokenUnfreezeOperation(context);
         this.grantKycOperation = new TokenGrantKycOperation(context);
         this.revokeKycOperation = new TokenRevokeKycOperation(context);
+        this.pauseOperation = new TokenPauseOperation(context);
     }
 
     /**
@@ -589,6 +596,23 @@ export class TokenService {
      */
     async revokeKycToken(options: RevokeKycTokenOptions): Promise<void> {
         return await this.revokeKycOperation.execute(options);
+    }
+
+    /**
+     * Pause a token network-wide.
+     *
+     * Blocks all transfers, mints, burns, wipes, freezes / unfreezes,
+     * grant / revoke KYC, and other operations on the token until it is
+     * unpaused. The token must have been created with a pause key, and
+     * that pause key must sign — supply it via `additionalSigners`.
+     *
+     * Note: `TokenPause` is not whitelisted for scheduling on the
+     * network, so no scheduled variant is exposed.
+     *
+     * @param options.tokenId - Token to pause
+     */
+    async pauseToken(options: PauseTokenOptions): Promise<void> {
+        return await this.pauseOperation.execute(options);
     }
 
     private buildFungibleOperationOptions(
