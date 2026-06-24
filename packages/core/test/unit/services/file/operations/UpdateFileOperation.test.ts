@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { FileUpdateTransaction, FileAppendTransaction } from "@hiero-ledger/sdk";
+import { FileAppendTransaction } from "@hiero-ledger/sdk";
 import type { Key } from "@hiero-ledger/sdk";
 import { FileService } from "../../../../../src/services/file/index.js";
 import { createMockContext } from "../../../../utils/mock-context.js";
@@ -85,7 +85,9 @@ describe("UpdateFileOperation (via FileService)", () => {
             expect(mocks.update.tx.setExpirationTime).toHaveBeenCalledWith(
                 expirationTime,
             );
-            expect(mocks.update.tx.setFileMemo).toHaveBeenCalledWith("new memo");
+            expect(mocks.update.tx.setFileMemo).toHaveBeenCalledWith(
+                "new memo",
+            );
         });
 
         it("clears the file memo when fileMemo is null", async () => {
@@ -136,7 +138,10 @@ describe("UpdateFileOperation (via FileService)", () => {
         });
 
         it("emits events with methodName 'updateExpirationTime'", async () => {
-            await service.updateExpirationTime("0.0.999", new Date("2030-01-01"));
+            await service.updateExpirationTime(
+                "0.0.999",
+                new Date("2030-01-01"),
+            );
 
             expect(context.emitAfterTransaction).toHaveBeenCalledWith(
                 expect.objectContaining({

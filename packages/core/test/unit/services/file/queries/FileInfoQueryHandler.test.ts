@@ -180,9 +180,9 @@ describe("FileInfoQueryHandler (via FileService)", () => {
                 } as never;
             });
 
-            await expect(
-                service.getExpirationTime("0.0.999"),
-            ).rejects.toThrow(HieroError);
+            await expect(service.getExpirationTime("0.0.999")).rejects.toThrow(
+                HieroError,
+            );
         });
     });
 });

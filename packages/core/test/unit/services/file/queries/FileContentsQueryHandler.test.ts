@@ -33,7 +33,8 @@ describe("FileContentsQueryHandler (via FileService)", () => {
             const contents = await service.getFileContents("0.0.999");
 
             expect(contents).toEqual(new Uint8Array([1, 2, 3]));
-            const queryMock = vi.mocked(FileContentsQuery).mock.results[0].value;
+            const queryMock =
+                vi.mocked(FileContentsQuery).mock.results[0].value;
             expect(queryMock.setFileId).toHaveBeenCalledWith("0.0.999");
             expect(queryMock.execute).toHaveBeenCalledWith(context.client);
         });
@@ -44,14 +45,12 @@ describe("FileContentsQueryHandler (via FileService)", () => {
         });
 
         it("returns empty Uint8Array for empty file", async () => {
-            vi.mocked(FileContentsQuery).mockImplementationOnce(
-                function () {
-                    return {
-                        setFileId: vi.fn().mockReturnThis(),
-                        execute: vi.fn().mockResolvedValue(new Uint8Array(0)),
-                    } as never;
-                },
-            );
+            vi.mocked(FileContentsQuery).mockImplementationOnce(function () {
+                return {
+                    setFileId: vi.fn().mockReturnThis(),
+                    execute: vi.fn().mockResolvedValue(new Uint8Array(0)),
+                } as never;
+            });
 
             const contents = await service.getFileContents("0.0.999");
             expect(contents).toEqual(new Uint8Array(0));
@@ -61,14 +60,12 @@ describe("FileContentsQueryHandler (via FileService)", () => {
 
     describe("error paths", () => {
         it("normalizes SDK query errors into HieroError", async () => {
-            vi.mocked(FileContentsQuery).mockImplementationOnce(
-                function () {
-                    return {
-                        setFileId: vi.fn().mockReturnThis(),
-                        execute: vi.fn().mockRejectedValue(new Error("boom")),
-                    } as never;
-                },
-            );
+            vi.mocked(FileContentsQuery).mockImplementationOnce(function () {
+                return {
+                    setFileId: vi.fn().mockReturnThis(),
+                    execute: vi.fn().mockRejectedValue(new Error("boom")),
+                } as never;
+            });
 
             await expect(service.getFileContents("0.0.999")).rejects.toThrow(
                 HieroError,
@@ -76,33 +73,29 @@ describe("FileContentsQueryHandler (via FileService)", () => {
         });
 
         it("wraps INVALID_FILE_ID error", async () => {
-            vi.mocked(FileContentsQuery).mockImplementationOnce(
-                function () {
-                    return {
-                        setFileId: vi.fn().mockReturnThis(),
-                        execute: vi
-                            .fn()
-                            .mockRejectedValue(new Error("INVALID_FILE_ID")),
-                    } as never;
-                },
-            );
+            vi.mocked(FileContentsQuery).mockImplementationOnce(function () {
+                return {
+                    setFileId: vi.fn().mockReturnThis(),
+                    execute: vi
+                        .fn()
+                        .mockRejectedValue(new Error("INVALID_FILE_ID")),
+                } as never;
+            });
 
-            await expect(service.getFileContents("0.0.invalid")).rejects.toThrow(
-                HieroError,
-            );
+            await expect(
+                service.getFileContents("0.0.invalid"),
+            ).rejects.toThrow(HieroError);
         });
 
         it("wraps FILE_DELETED error", async () => {
-            vi.mocked(FileContentsQuery).mockImplementationOnce(
-                function () {
-                    return {
-                        setFileId: vi.fn().mockReturnThis(),
-                        execute: vi
-                            .fn()
-                            .mockRejectedValue(new Error("FILE_DELETED")),
-                    } as never;
-                },
-            );
+            vi.mocked(FileContentsQuery).mockImplementationOnce(function () {
+                return {
+                    setFileId: vi.fn().mockReturnThis(),
+                    execute: vi
+                        .fn()
+                        .mockRejectedValue(new Error("FILE_DELETED")),
+                } as never;
+            });
 
             await expect(service.getFileContents("0.0.999")).rejects.toThrow(
                 HieroError,

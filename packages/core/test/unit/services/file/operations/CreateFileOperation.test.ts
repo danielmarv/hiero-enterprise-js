@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { FileCreateTransaction, FileAppendTransaction } from "@hiero-ledger/sdk";
+import {
+    FileCreateTransaction,
+    FileAppendTransaction,
+} from "@hiero-ledger/sdk";
 import type { Key } from "@hiero-ledger/sdk";
 import { FileService } from "../../../../../src/services/file/index.js";
 import { createMockContext } from "../../../../utils/mock-context.js";
@@ -67,14 +70,19 @@ describe("CreateFileOperation (via FileService)", () => {
             expect(mocks.create.tx.freezeWith).toHaveBeenCalledWith(
                 context.client,
             );
-            expect(mocks.create.tx.execute).toHaveBeenCalledWith(context.client);
+            expect(mocks.create.tx.execute).toHaveBeenCalledWith(
+                context.client,
+            );
             expect(FileAppendTransaction).not.toHaveBeenCalled();
         });
 
         it("creates a file over 4KB and appends remaining contents", async () => {
             const contents = new Uint8Array(5000);
 
-            const fileId = await service.createFile(contents, new Date("2030-01-01"));
+            const fileId = await service.createFile(
+                contents,
+                new Date("2030-01-01"),
+            );
 
             expect(fileId).toBe("0.0.555");
             expect(FileCreateTransaction).toHaveBeenCalled();

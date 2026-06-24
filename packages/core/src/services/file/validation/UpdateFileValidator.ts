@@ -10,7 +10,10 @@ export class UpdateFileValidator {
     }
 
     private validateChunkSize(chunkSize: number | undefined): void {
-        if (chunkSize != null && (!Number.isInteger(chunkSize) || chunkSize <= 0)) {
+        if (
+            chunkSize != null &&
+            (!Number.isInteger(chunkSize) || chunkSize <= 0)
+        ) {
             throw new Error("chunkSize must be a positive integer");
         }
     }

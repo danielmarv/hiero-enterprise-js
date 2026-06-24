@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { FileAppendTransaction } from "@hiero-ledger/sdk";
 import { FileService } from "../../../../../src/services/file/index.js";
 import { createMockContext } from "../../../../utils/mock-context.js";
 import { reattachMockChain } from "../../../../utils/sdk-mocks.js";
@@ -113,9 +112,9 @@ describe("AppendFileOperation (via FileService)", () => {
         });
 
         it("rejects empty string contents", async () => {
-            await expect(
-                service.appendFile("0.0.999", ""),
-            ).rejects.toThrow("Append contents must not be empty");
+            await expect(service.appendFile("0.0.999", "")).rejects.toThrow(
+                "Append contents must not be empty",
+            );
         });
 
         it("rejects invalid chunkSize (zero)", async () => {

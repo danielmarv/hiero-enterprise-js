@@ -1,4 +1,7 @@
-import { FileAppendTransaction, FileUpdateTransaction } from "@hiero-ledger/sdk";
+import {
+    FileAppendTransaction,
+    FileUpdateTransaction,
+} from "@hiero-ledger/sdk";
 import type { IHieroContext } from "../../../context/index.js";
 import { normalizeError } from "../../../errors/index.js";
 import type {
@@ -132,7 +135,8 @@ export class UpdateFileOperation {
             .setContents(contents)
             .setChunkSize(chunkSize)
             .setMaxChunks(
-                options.maxChunks ?? this.getRequiredChunks(contents, chunkSize),
+                options.maxChunks ??
+                    this.getRequiredChunks(contents, chunkSize),
             );
 
         if (options.chunkInterval != null) {

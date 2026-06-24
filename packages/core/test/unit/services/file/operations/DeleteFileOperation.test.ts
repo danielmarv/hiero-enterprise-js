@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { FileDeleteTransaction } from "@hiero-ledger/sdk";
 import { FileService } from "../../../../../src/services/file/index.js";
 import { createMockContext } from "../../../../utils/mock-context.js";
 import { reattachMockChain } from "../../../../utils/sdk-mocks.js";
@@ -74,9 +73,7 @@ describe("DeleteFileOperation (via FileService)", () => {
 
     describe("error paths", () => {
         it("wraps SDK errors in HieroError", async () => {
-            mocks.tx.execute.mockRejectedValueOnce(
-                new Error("FILE_DELETED"),
-            );
+            mocks.tx.execute.mockRejectedValueOnce(new Error("FILE_DELETED"));
 
             await expect(service.deleteFile("0.0.999")).rejects.toThrow(
                 HieroError,
