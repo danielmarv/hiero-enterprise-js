@@ -10,7 +10,7 @@ export type {
 } from "./transaction/index.js";
 export { SmartContractService } from "./smart-contract-service.js";
 export { TopicService } from "./topic-service.js";
-export { FileService } from "./file-service.js";
+export * from "./file/index.js";
 export type {
     CreateTopicOptions,
     CreatePrivateTopicOptions,

@@ -1,0 +1,10 @@
+export { FileService } from "./FileService.js";
+export { CreateFileOperation } from "./operations/index.js";
+export { AppendFileOperation } from "./operations/index.js";
+export { UpdateFileOperation } from "./operations/index.js";
+export { DeleteFileOperation } from "./operations/index.js";
+export { FileContentsQueryHandler } from "./queries/index.js";
+export { FileInfoQueryHandler } from "./queries/index.js";
+export { CreateFileValidator } from "./validation/index.js";
+export { UpdateFileValidator } from "./validation/index.js";
+export { AppendFileValidator } from "./validation/index.js";
